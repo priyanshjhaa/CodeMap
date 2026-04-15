@@ -1,14 +1,27 @@
 import NextAuth from "next-auth";
 import GitHub from "next-auth/providers/github";
 
+declare module "next-auth" {
+  interface Session {
+    accessToken?: string;
+  }
+}
+
+declare module "next-auth/jwt" {
+  interface JWT {
+    accessToken?: string;
+  }
+}
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
   providers: [
     GitHub({
-      clientId: process.env.GITHUB_CLIENT_ID ?? "",
-      clientSecret: process.env.GITHUB_CLIENT_SECRET ?? ""
+      clientId: process.env.GITHUB_CLIENT_ID!,
+      clientSecret: process.env.GITHUB_CLIENT_SECRET!
     })
   ],
   trustHost: true,
+  secret: process.env.NEXTAUTH_SECRET,
   session: {
     strategy: "jwt"
   },
@@ -16,7 +29,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     signIn: "/"
   },
   callbacks: {
-    async signIn({ user, account }) {
+    async signIn({ account }) {
       if (account?.provider === "github" && account.access_token) {
         // Store GitHub access token in JWT
         return true;
