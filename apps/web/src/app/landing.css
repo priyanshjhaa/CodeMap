@@ -822,6 +822,16 @@
   .hero-cta {
     flex-direction: column;
   }
+
+  .cta-actions {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .cta-button {
+    width: 100%;
+    max-width: 400px;
+  }
 }
 
 @media (max-width: 480px) {

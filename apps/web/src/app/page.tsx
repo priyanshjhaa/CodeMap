@@ -11,14 +11,13 @@ export default function HomePage() {
             <Link href="#features">Features</Link>
             <Link href="#how-it-works">How it Works</Link>
             <Link href="#pricing">Pricing</Link>
-            <Link href="/docs">Documentation</Link>
           </div>
           <div className="navbar-actions">
             <Link href="/login" className="navbar-button navbar-button-ghost">
               Login
             </Link>
             <Link href="/login" className="navbar-button navbar-button-filled">
-              Start for Free
+              Get Started
             </Link>
           </div>
         </div>
@@ -270,12 +269,12 @@ export default function HomePage() {
             Join thousands of teams shipping faster with CodeMap. Start your free trial today.
           </p>
           <div className="cta-actions">
-            <button className="cta-button cta-button-primary">
+            <Link href="/login" className="cta-button cta-button-primary">
               Get Started Free
-            </button>
-            <button className="cta-button cta-button-secondary">
-              Schedule Demo
-            </button>
+            </Link>
+            <Link href="#how-it-works" className="cta-button cta-button-secondary">
+              How it Works
+            </Link>
           </div>
           <div className="cta-trust">
             <span>✓ No credit card required</span>
@@ -287,32 +286,6 @@ export default function HomePage() {
 
       {/* Footer */}
       <footer className="landing-footer">
-        <div className="footer-container">
-          <div className="footer-brand">
-            <div className="footer-logo">CodeMap</div>
-            <p>Transforming onboarding from weeks to hours.</p>
-          </div>
-          <div className="footer-links">
-            <div className="footer-column">
-              <h4>Product</h4>
-              <Link href="#features">Features</Link>
-              <Link href="#pricing">Pricing</Link>
-              <Link href="/docs">Documentation</Link>
-            </div>
-            <div className="footer-column">
-              <h4>Company</h4>
-              <Link href="/about">About</Link>
-              <Link href="/blog">Blog</Link>
-              <Link href="/careers">Careers</Link>
-            </div>
-            <div className="footer-column">
-              <h4>Legal</h4>
-              <Link href="/privacy">Privacy</Link>
-              <Link href="/terms">Terms</Link>
-              <Link href="/security">Security</Link>
-            </div>
-          </div>
-        </div>
         <div className="footer-bottom">
           <p>&copy; 2024 CodeMap. All rights reserved.</p>
         </div>
