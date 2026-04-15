@@ -1,30 +1,36 @@
+"use client";
+
 import Link from "next/link";
 
 export function AuthCard() {
+  const handleGitHubSignIn = () => {
+    // Redirect to the NextAuth sign-in handler
+    window.location.href = "/api/auth/signin?provider=github&callbackUrl=%2Fonboarding%2Fworkspace";
+  };
+
   return (
     <div className="auth-card card">
-      <p className="eyebrow">Mocked sign-in</p>
+      <p className="eyebrow">Sign in to CodeMap</p>
       <h1>Welcome back to CodeMap.</h1>
       <p>
-        This frontend phase keeps sign-in product-focused: show trust, explain the next steps, and
-        route the user into workspace setup without waiting on live auth.
+        Connect your GitHub account to start analyzing your repositories with AI-powered insights.
       </p>
 
       <div className="stack-list">
         <div className="inline-stat">
           <strong>GitHub OAuth</strong>
-          <span>Ready to wire when backend auth is switched on</span>
+          <span>Secure authentication with your GitHub account</span>
         </div>
         <div className="inline-stat">
           <strong>Workspace onboarding</strong>
-          <span>Guided next, with repo connection and first sync preview</span>
+          <span>Guided setup with repo connection and first sync preview</span>
         </div>
       </div>
 
       <div className="button-row">
-        <Link className="button" href="/onboarding/workspace">
+        <button className="button" onClick={handleGitHubSignIn}>
           Continue with GitHub
-        </Link>
+        </button>
         <Link className="button button--secondary" href="/">
           Back to landing
         </Link>

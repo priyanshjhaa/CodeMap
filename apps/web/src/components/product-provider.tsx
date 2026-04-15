@@ -25,10 +25,16 @@ import {
   getRepositoryDetail,
   getSyncProgress,
   listChatSessions,
-  listRepositories,
   sendChatMessage,
   startRepositorySync
 } from "../lib/mock-api";
+import {
+  listRepositories,
+  getRepositoryDetail as getRepoDetail,
+  getSyncProgress as getSyncProgressReal,
+  importRepository,
+  createWorkspace
+} from "../lib/api-client";
 
 interface ProductContextValue {
   user: CurrentUser | null;
@@ -69,20 +75,26 @@ export function ProductProvider({ children }: PropsWithChildren) {
     let cancelled = false;
 
     async function bootstrap() {
-      const [workspaceResult, repositoryResult] = await Promise.all([
-        getCurrentWorkspace(),
-        listRepositories()
-      ]);
+      try {
+        const [workspaceResult, repositoryResult] = await Promise.all([
+          getCurrentWorkspace(),
+          listRepositories()
+        ]);
 
-      if (cancelled) {
-        return;
+        if (cancelled) {
+          return;
+        }
+
+        setUser(workspaceResult.user);
+        setWorkspace(workspaceResult.workspace);
+        setRepositories(repositoryResult);
+        setActiveRepoId(workspaceResult.workspace.activeRepositoryId);
+        setAppReady(true);
+      } catch (error) {
+        console.error("Failed to bootstrap product context:", error);
+        // Set app ready even on error to avoid hanging
+        setAppReady(true);
       }
-
-      setUser(workspaceResult.user);
-      setWorkspace(workspaceResult.workspace);
-      setRepositories(repositoryResult);
-      setActiveRepoId(workspaceResult.workspace.activeRepositoryId);
-      setAppReady(true);
     }
 
     void bootstrap();
