@@ -11,15 +11,17 @@ export function RepositoryConnectList({ repositories }: { repositories: Reposito
               <p className="eyebrow">{repository.visibility} repository</p>
               <h3>{repository.owner}/{repository.name}</h3>
             </div>
-            <span className={`status-pill status-pill--${repository.health}`}>
-              {repository.health.replace("_", " ")}
-            </span>
+            {repository.health && (
+              <span className={`status-pill status-pill--${repository.health}`}>
+                {repository.health.replace("_", " ")}
+              </span>
+            )}
           </div>
           <p>{repository.description}</p>
           <div className="mini-meta">
-            <span>{repository.language}</span>
-            <span>{repository.fileCount} files</span>
-            <span>{repository.lastActivity}</span>
+            <span>{repository.language || "Unknown"}</span>
+            <span>{repository.fileCount || 0} files</span>
+            <span>{repository.lastActivity || "No recent activity"}</span>
           </div>
           <div className="button-row">
             <Link className="button" href={`/onboarding/sync?repo=${repository.id}`}>

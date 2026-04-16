@@ -1,11 +1,11 @@
 "use client";
 
 import Link from "next/link";
+import { signInWithGitHub } from "../lib/actions";
 
 export function AuthCard() {
-  const handleGitHubSignIn = () => {
-    // Redirect to the NextAuth sign-in handler
-    window.location.href = "/api/auth/signin?provider=github&callbackUrl=%2Fonboarding%2Fworkspace";
+  const handleGitHubSignIn = async () => {
+    await signInWithGitHub();
   };
 
   return (

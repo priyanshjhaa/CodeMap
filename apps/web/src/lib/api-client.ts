@@ -1,16 +1,19 @@
 import type { RepositoryListItem, RepositoryDetail } from "@codemap/shared";
 
 const API_BASE = process.env.API_BASE_URL || "http://localhost:4000";
+const USE_PROXY = true; // Use Next.js proxy to avoid CORS issues
 
 /**
  * Fetch repositories for the authenticated user
  */
 export async function listRepositories(): Promise<RepositoryListItem[]> {
-  const response = await fetch(`${API_BASE}/api/repos`, {
+  const url = USE_PROXY ? "/api/proxy/repos" : `${API_BASE}/api/repos`;
+
+  const response = await fetch(url, {
     headers: {
       "Content-Type": "application/json",
     },
-    // Note: NextAuth session token will be included via middleware or cookies
+    credentials: "include", // Include cookies for authentication
   });
 
   if (!response.ok) {
@@ -30,6 +33,7 @@ export async function getRepositoryDetail(
     headers: {
       "Content-Type": "application/json",
     },
+    credentials: "include",
   });
 
   if (!response.ok) {
@@ -50,6 +54,7 @@ export async function importRepository(repoId: string): Promise<{
     headers: {
       "Content-Type": "application/json",
     },
+    credentials: "include",
   });
 
   if (!response.ok) {
@@ -74,6 +79,7 @@ export async function getSyncProgress(repoId: string): Promise<{
       headers: {
         "Content-Type": "application/json",
       },
+      credentials: "include",
     }
   );
 
@@ -97,6 +103,7 @@ export async function createWorkspace(data: {
     headers: {
       "Content-Type": "application/json",
     },
+    credentials: "include",
     body: JSON.stringify(data),
   });
 
