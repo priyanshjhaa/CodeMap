@@ -24,17 +24,11 @@ import {
   getCurrentWorkspace,
   getRepositoryDetail,
   getSyncProgress,
+  listRepositories,
   listChatSessions,
   sendChatMessage,
   startRepositorySync
 } from "../lib/mock-api";
-import {
-  listRepositories,
-  getRepositoryDetail as getRepoDetail,
-  getSyncProgress as getSyncProgressReal,
-  importRepository,
-  createWorkspace
-} from "../lib/api-client";
 
 interface ProductContextValue {
   user: CurrentUser | null;
@@ -92,7 +86,6 @@ export function ProductProvider({ children }: PropsWithChildren) {
         setAppReady(true);
       } catch (error) {
         console.error("Failed to bootstrap product context:", error);
-        // Set app ready even on error to avoid hanging
         setAppReady(true);
       }
     }

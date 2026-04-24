@@ -15,6 +15,31 @@ CodeMap is a hosted onboarding assistant for engineering teams. This repository 
 3. Start infrastructure from `infra/docker/docker-compose.yml`.
 4. Run `npm run dev:api` and `npm run dev:web`.
 
+## Frontend development
+
+The Phase 1 frontend is intentionally mock-driven while the backend is prepared.
+
+Run the web app locally:
+
+```bash
+npm install
+npm run dev:web
+```
+
+If Next.js reports missing chunks or stale build files, stop the dev server and clear the local cache:
+
+```bash
+rm -rf apps/web/.next
+npm run dev:web
+```
+
+Verify the frontend before moving to backend integration:
+
+```bash
+npm run typecheck --workspace @codemap/web
+npm run build --workspace @codemap/web
+```
+
 ## MVP capabilities
 
 - GitHub OAuth connection flow

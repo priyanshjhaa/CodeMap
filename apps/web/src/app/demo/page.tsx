@@ -49,13 +49,13 @@ export default function DemoPage() {
               <div className="demo-step-content">
                 <h3>Connect Your Repository</h3>
                 <p>
-                  Link your GitHub, GitLab, or Bitbucket repository with a single click.
-                  CodeMap securely accesses your code and begins the indexing process automatically.
+                  Connect a GitHub repository with a guided onboarding flow.
+                  CodeMap prepares the selected codebase for indexing and cited chat.
                 </p>
                 <ul className="demo-feature-list">
-                  <li>✓ Supports all major Git providers</li>
+                  <li>✓ GitHub-first repository connection</li>
                   <li>✓ OAuth authentication for secure access</li>
-                  <li>✓ Select specific branches or directories</li>
+                  <li>✓ Single-repository onboarding for the MVP</li>
                 </ul>
               </div>
             </div>
@@ -65,14 +65,14 @@ export default function DemoPage() {
               <div className="demo-step-content">
                 <h3>AI-Powered Analysis</h3>
                 <p>
-                  Our advanced AI analyzes your codebase architecture, identifies patterns,
-                  and builds a comprehensive knowledge graph of your code structure.
+                  CodeMap indexes TS/JS-first repositories, extracts useful file context,
+                  and prepares lightweight architecture summaries.
                 </p>
                 <ul className="demo-feature-list">
-                  <li>✓ Understands code relationships and dependencies</li>
-                  <li>✓ Identifies design patterns and architecture</li>
-                  <li>✓ Maps data flow and function calls</li>
-                  <li>✓ Generates contextual documentation</li>
+                  <li>✓ Tracks entry points and module relationships</li>
+                  <li>✓ Stores chunks for retrieval-backed answers</li>
+                  <li>✓ Shows sync readiness and failure states</li>
+                  <li>✓ Generates onboarding-oriented architecture notes</li>
                 </ul>
               </div>
             </div>
@@ -88,7 +88,7 @@ export default function DemoPage() {
                 <ul className="demo-feature-list">
                   <li>✓ Semantic code search</li>
                   <li>✓ Natural language queries</li>
-                  <li>✓ PR summaries and impact analysis</li>
+                  <li>✓ Citations with files, symbols, and line ranges</li>
                   <li>✓ Onboarding guides for new developers</li>
                 </ul>
               </div>
@@ -112,31 +112,30 @@ export default function DemoPage() {
               <h3>Semantic Search</h3>
               <p>
                 Find code by intent, not just keywords. Search for "authentication logic"
-                and get all related functions, classes, and their relationships.
+                and get relevant files, symbols, and citations.
               </p>
             </div>
 
             <div className="demo-feature-card">
               <h3>Architecture Visualization</h3>
               <p>
-                Interactive diagrams showing system architecture, component relationships,
-                and data flow. Understand complex systems at a glance.
+                Lightweight diagrams and summaries showing entry points, modules,
+                and major repository flows.
               </p>
             </div>
 
             <div className="demo-feature-card">
               <h3>AI-Powered Insights</h3>
               <p>
-                Get intelligent suggestions, detect potential issues, and understand
-                the impact of changes before you commit.
+                Get onboarding-focused explanations grounded in indexed repository context.
               </p>
             </div>
 
             <div className="demo-feature-card">
-              <h3>PR Summaries</h3>
+              <h3>Cited Answers</h3>
               <p>
-                Automatically generated pull request summaries with context-aware
-                explanations, making code reviews faster and more thorough.
+                Answers point back to relevant files, symbols, line ranges,
+                and source snippets so users can verify the context.
               </p>
             </div>
 
@@ -149,10 +148,10 @@ export default function DemoPage() {
             </div>
 
             <div className="demo-feature-card">
-              <h3>Dependency Graphs</h3>
+              <h3>Sync Visibility</h3>
               <p>
-                Visualize how components depend on each other. Trace function calls,
-                imports, and data flow across your entire codebase.
+                See when repositories are ready, indexing, failed, or waiting for
+                access repair.
               </p>
             </div>
           </div>
@@ -180,14 +179,6 @@ export default function DemoPage() {
             </div>
 
             <div className="demo-use-case">
-              <h3>Code Reviews</h3>
-              <p>
-                Review pull requests faster with AI-generated summaries and impact analysis.
-                Understand what changes affect and why they matter.
-              </p>
-            </div>
-
-            <div className="demo-use-case">
               <h3>Knowledge Sharing</h3>
               <p>
                 Capture institutional knowledge in a searchable format. Find answers
@@ -198,8 +189,8 @@ export default function DemoPage() {
             <div className="demo-use-case">
               <h3>Legacy Code</h3>
               <p>
-                Untangle complex legacy systems with visual dependency graphs and
-                AI-powered explanations of obscure code patterns.
+                Build a starting map for older repositories with entry points,
+                important modules, and cited explanations.
               </p>
             </div>
           </div>

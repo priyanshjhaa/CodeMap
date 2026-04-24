@@ -48,7 +48,7 @@ export default function SyncPage() {
             </span>
           ))}
         </div>
-        <div className="button-row">
+        <div className="button-row" style={{ marginTop: '2rem' }}>
           <Link className="button" href="/dashboard">
             Open the product dashboard
           </Link>

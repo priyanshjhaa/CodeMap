@@ -35,7 +35,7 @@ export default function HomePage() {
             Chat With Your Codebase
           </h1>
           <p className="hero-description">
-            Instantly understand architecture, dependencies, and pull requests
+            Instantly understand architecture, repository flows, and cited code context
             with AI-powered insights. Transform onboarding from weeks to hours.
           </p>
           <div className="hero-cta">
@@ -78,7 +78,6 @@ export default function HomePage() {
                 <span>Vercel</span>
               </div>
               <div className="company-logo">
-                <img src="https://upload.wikimedia.org/wikipedia/commons/4/45/Notion_app_logo.png" alt="Notion" />
                 <span>Notion</span>
               </div>
               <div className="company-logo">
@@ -106,27 +105,27 @@ export default function HomePage() {
           <div className="features-grid">
             <div className="feature-card glass-card">
               <h3>Architectural Insights</h3>
-              <p>Automatically visualize system architecture and relationships between components.</p>
+              <p>Generate lightweight architecture summaries, entry points, and repository maps.</p>
             </div>
             <div className="feature-card glass-card">
               <h3>Semantic Search</h3>
               <p>Find relevant code instantly using natural language queries across your repository.</p>
             </div>
             <div className="feature-card glass-card">
-              <h3>Dependency Graphs</h3>
-              <p>Understand how components interact and depend on each other across the codebase.</p>
+              <h3>Sync Status</h3>
+              <p>Track repository readiness, indexing progress, and failed sync states clearly.</p>
             </div>
             <div className="feature-card glass-card">
-              <h3>PR Summaries</h3>
-              <p>Quickly review pull requests with AI-generated insights and context-aware explanations.</p>
+              <h3>Cited Answers</h3>
+              <p>Review answers with file paths, symbols, line ranges, and citation context.</p>
             </div>
             <div className="feature-card glass-card">
               <h3>Context-Aware Chat</h3>
               <p>Ask questions and get accurate answers grounded in your actual code and documentation.</p>
             </div>
             <div className="feature-card glass-card">
-              <h3>Commit Insights</h3>
-              <p>Track the evolution of features and understand the history behind any piece of code.</p>
+              <h3>Guided Onboarding</h3>
+              <p>Give new developers a clear path through modules, flows, and key files.</p>
             </div>
           </div>
         </div>
@@ -146,21 +145,21 @@ export default function HomePage() {
               <div className="step-number">1</div>
               <div className="step-content">
                 <h3>Connect Your Repository</h3>
-                <p>Link your GitHub, GitLab, or Bitbucket repository with one click.</p>
+                <p>Connect a GitHub repository and choose the first codebase to index.</p>
               </div>
             </div>
             <div className="step-item">
               <div className="step-number">2</div>
               <div className="step-content">
                 <h3>AI Analysis</h3>
-                <p>Our system indexes and understands your codebase architecture and patterns.</p>
+                <p>CodeMap indexes files, chunks code, and prepares retrieval-ready context.</p>
               </div>
             </div>
             <div className="step-item">
               <div className="step-number">3</div>
               <div className="step-content">
                 <h3>Start Chatting</h3>
-                <p>Ask questions in natural language and get instant, accurate answers.</p>
+                <p>Ask questions in natural language and review answers with citations.</p>
               </div>
             </div>
           </div>
@@ -183,7 +182,7 @@ export default function HomePage() {
               <p className="pricing-description">Perfect for individuals and open source</p>
               <ul className="pricing-features">
                 <li>✓ Up to 3 repositories</li>
-                <li>✓ Basic code search</li>
+                <li>✓ Repository onboarding chat</li>
                 <li>✓ Community support</li>
               </ul>
               <button className="pricing-button">Get Started</button>
@@ -194,8 +193,8 @@ export default function HomePage() {
               <div className="pricing-price">$29<span>/month</span></div>
               <p className="pricing-description">For startups and growing teams</p>
               <ul className="pricing-features">
-                <li>✓ Unlimited repositories</li>
-                <li>✓ Advanced insights</li>
+                <li>✓ Team workspaces</li>
+                <li>✓ Lightweight architecture views</li>
                 <li>✓ Priority support</li>
                 <li>✓ Team collaboration</li>
               </ul>
@@ -207,8 +206,8 @@ export default function HomePage() {
               <p className="pricing-description">For large organizations</p>
               <ul className="pricing-features">
                 <li>✓ Everything in Pro</li>
-                <li>✓ SSO & SAML</li>
-                <li>✓ Custom integrations</li>
+                <li>✓ Private repository controls</li>
+                <li>✓ Workspace governance</li>
                 <li>✓ Dedicated support</li>
               </ul>
               <button className="pricing-button">Contact Sales</button>
@@ -250,7 +249,7 @@ export default function HomePage() {
             <div className="testimonial-card glass-card">
               <div className="testimonial-stars">★★★★★</div>
               <p className="testimonial-quote">
-                "PR reviews that used to take hours now take minutes. The impact analysis alone is worth the price."
+                "The cited answers make it much easier to trust what the assistant is saying about unfamiliar code."
               </p>
               <div className="testimonial-author">
                 <div className="author-name">Emily Rodriguez</div>

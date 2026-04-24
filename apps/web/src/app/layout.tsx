@@ -1,15 +1,7 @@
 import type { Metadata } from "next";
-import { IBM_Plex_Sans } from "next/font/google";
 import "./globals.css";
 import "./landing.css";
 import { BackgroundImage } from "../components/BackgroundImage";
-
-const ibmPlexSans = IBM_Plex_Sans({
-  subsets: ["latin"],
-  variable: "--font-ibm-plex-sans",
-  display: "swap",
-  weight: ["300", "400", "500", "600", "700"],
-});
 
 export const metadata: Metadata = {
   title: "CodeMap",
@@ -18,7 +10,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={ibmPlexSans.variable}>
+    <html lang="en">
       <body>
         <BackgroundImage />
         {children}
