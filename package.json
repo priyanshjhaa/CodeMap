@@ -13,6 +13,9 @@
     "lint": "npm run lint --workspaces",
     "typecheck": "npm run typecheck --workspaces"
   },
+  "prisma": {
+    "schema": "prisma/schema.prisma"
+  },
   "devDependencies": {
     "typescript": "^5.8.3"
   },

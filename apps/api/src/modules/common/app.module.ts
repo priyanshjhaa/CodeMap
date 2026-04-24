@@ -11,9 +11,11 @@ import { ParserModule } from "../parser/parser.module.js";
 import { DatabaseModule } from "../database/database.module.js";
 import { WorkspacesModule } from "../workspaces/workspaces.module.js";
 import { SyncModule } from "../sync/sync.module.js";
+import { EncryptionModule } from "../encryption/encryption.module.js";
 
 @Module({
   imports: [
+    EncryptionModule,
     DatabaseModule,
     WorkspacesModule,
     GithubModule,

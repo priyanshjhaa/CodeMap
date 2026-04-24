@@ -7,7 +7,12 @@
     "start:dev": "nest start --watch",
     "build": "nest build",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "lint": "tsc -p tsconfig.json --noEmit"
+    "lint": "tsc -p tsconfig.json --noEmit",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:seed": "tsx prisma/seed.ts",
+    "prisma:reset": "prisma migrate reset",
+    "prisma:studio": "prisma studio"
   },
   "dependencies": {
     "@codemap/shared": "*",
@@ -22,6 +27,8 @@
   "devDependencies": {
     "@nestjs/cli": "^11.0.10",
     "@nestjs/schematics": "^11.0.6",
+    "@prisma/client": "^5.22.0",
+    "prisma": "^5.22.0",
     "typescript": "^5.8.3"
   }
 }
