@@ -6,7 +6,9 @@ export default function HomePage() {
       {/* Navigation */}
       <nav className="navbar">
         <div className="navbar-container">
-          <div className="navbar-logo">CodeMap</div>
+          <div className="navbar-logo">
+            <span className="navbar-logo-gradient">CodeMap</span>
+          </div>
           <div className="navbar-links">
             <Link href="#features">Features</Link>
             <Link href="#how-it-works">How it Works</Link>
@@ -16,7 +18,7 @@ export default function HomePage() {
             <Link href="/login" className="navbar-button navbar-button-ghost">
               Login
             </Link>
-            <Link href="/login" className="navbar-button navbar-button-filled">
+            <Link href="/login" className="navbar-button navbar-button-aurora">
               Get Started
             </Link>
           </div>
@@ -26,34 +28,39 @@ export default function HomePage() {
       {/* Hero Section */}
       <section className="hero-section">
         <div className="hero-glow"></div>
+        <div className="hero-aurora-layer">
+          <div className="aurora-glow aurora-glow-emerald"></div>
+          <div className="aurora-glow aurora-glow-cyan"></div>
+        </div>
         <div className="hero-container">
           <div className="hero-badge">
             <span className="badge-dot"></span>
             AI-Powered Code Understanding
           </div>
           <h1 className="hero-title">
-            Chat With Your Codebase
+            Chat with your <span className="hero-title-gradient">codebase</span>.
           </h1>
           <p className="hero-description">
-            Instantly understand architecture, repository flows, and cited code context
-            with AI-powered insights. Transform onboarding from weeks to hours.
+            Understand architecture, repository flows, and code context instantly.
+            Turn onboarding from weeks into hours.
           </p>
           <div className="hero-cta">
-            <input
-              type="email"
-              placeholder="Enter your email"
-              className="email-input"
-            />
-            <Link href="/login" className="cta-button cta-button-primary">
-              Get Started
-            </Link>
-            <Link href="/demo" className="cta-button cta-button-secondary">
+            <div className="email-input-wrapper">
+              <input
+                type="email"
+                placeholder="Enter your email"
+                className="email-input"
+              />
+              <Link href="/login" className="cta-button-primary">
+                Get Started
+              </Link>
+            </div>
+            <Link href="/demo" className="cta-button-secondary">
               View Demo
             </Link>
           </div>
           <div className="hero-trust">
             <span>✓ No credit card required</span>
-            <span>✓ Free forever for individuals</span>
             <span>✓ Setup in 2 minutes</span>
           </div>
         </div>
