@@ -37,12 +37,14 @@
 }
 
 .navbar-logo-gradient {
-  background: linear-gradient(135deg, #10b981, #06b6d4);
+  background: linear-gradient(135deg, #10b981, #06b6d4, #10b981, #06b6d4);
+  background-size: 300% 300%;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
   position: relative;
   z-index: 1;
+  animation: flowingGradient 4s ease infinite;
 }
 
 /* Glowing effect for logo */
@@ -58,6 +60,18 @@
   background-clip: text;
   filter: blur(20px);
   opacity: 0.6;
+}
+
+@keyframes flowingGradient {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
 }
 
 .navbar-links {
@@ -109,9 +123,11 @@
   background: rgba(255, 255, 255, 0.1);
 }
 
-/* Aurora gradient navbar button with multi-layered glow */
+/* Aurora gradient navbar button with flowing animation */
 .navbar-button-aurora {
-  background: linear-gradient(135deg, #10b981, #14b8a6);
+  background: linear-gradient(135deg, #10b981, #06b6d4, #10b981, #06b6d4);
+  background-size: 300% 300%;
+  animation: flowingGradient 4s ease infinite;
   border: none;
   color: #000;
   box-shadow:
@@ -293,14 +309,16 @@
   margin-bottom: 8px;
 }
 
-/* Aurora gradient text for "codebase" with glow */
+/* Aurora gradient text for "codebase" with flowing animation */
 .hero-title-gradient {
-  background: linear-gradient(135deg, #10b981, #14b8a6);
+  background: linear-gradient(135deg, #10b981, #06b6d4, #10b981, #06b6d4);
+  background-size: 300% 300%;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
   position: relative;
   display: inline-block;
+  animation: flowingGradient 4s ease infinite;
 }
 
 /* Glowing effect for codebase text */
@@ -310,7 +328,7 @@
   left: 0;
   top: 0;
   z-index: -1;
-  background: linear-gradient(135deg, #10b981, #14b8a6);
+  background: linear-gradient(135deg, #10b981, #06b6d4);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -372,9 +390,11 @@
   box-shadow: none;
 }
 
-/* Premium gradient button for email CTA with cyan hover and glow */
+/* Premium gradient button for email CTA with flowing animation */
 .cta-button-primary {
-  background: linear-gradient(135deg, #10b981, #14b8a6);
+  background: linear-gradient(135deg, #10b981, #06b6d4, #10b981, #06b6d4);
+  background-size: 300% 300%;
+  animation: flowingGradient 4s ease infinite;
   color: #000;
   padding: 12px 24px;
   border-radius: 999px;
@@ -418,16 +438,20 @@
   background: rgba(255, 255, 255, 0.05);
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.15);
-  color: var(--text);
+  color: rgba(255, 255, 255, 0.9);
+  font-weight: 600;
   transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .cta-button-secondary:hover {
   background: rgba(255, 255, 255, 0.15);
-  border-color: rgba(255, 255, 255, 0.4);
+  border-color: rgba(16, 185, 129, 0.4);
+  color: #ffffff;
   transform: translateY(-2px) scale(1.02);
-  box-shadow: 0 10px 30px rgba(255, 255, 255, 0.2);
-  filter: brightness(1.2);
+  box-shadow: 0 10px 30px rgba(16, 185, 129, 0.2);
 }
 
 .cta-button-large {

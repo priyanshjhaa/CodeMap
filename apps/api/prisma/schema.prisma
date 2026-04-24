@@ -54,6 +54,8 @@ model RepositoryConnection {
   userId          String
   user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   repository      Repository?
+
+  @@unique([userId, provider])
 }
 
 model Repository {
