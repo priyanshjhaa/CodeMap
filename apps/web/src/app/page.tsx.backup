@@ -914,9 +914,9 @@ export default function HomePage() {
                   price: '$0',
                   period: 'forever',
                   description: 'Perfect for individuals and open source',
-                  icon: (<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>),
+                  icon: '🎯',
                   features: ['Up to 3 repositories', 'Repository onboarding chat', 'Community support'],
-                  cta: null
+                  cta: 'Get Started'
                 },
                 {
                   id: 1,
@@ -924,7 +924,7 @@ export default function HomePage() {
                   price: '$29',
                   period: '/month',
                   description: 'For startups and growing teams',
-                  icon: (<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>),
+                  icon: '🚀',
                   features: ['Unlimited repositories', 'Team workspaces', 'Architecture views', 'Priority support', 'Team collaboration'],
                   cta: 'Start Free Trial',
                   popular: true
@@ -935,9 +935,9 @@ export default function HomePage() {
                   price: 'Custom',
                   period: '',
                   description: 'For large organizations',
-                  icon: (<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 21h18"/><path d="M5 21V7l8-4 8 4v14"/><path d="M8 21v-2a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>),
+                  icon: '🏢',
                   features: ['Everything in Pro', 'Unlimited team members', 'SSO & SAML', 'Private repository controls', 'Workspace governance', 'Dedicated support', 'SLA guarantee'],
-                  cta: null
+                  cta: 'Contact Sales'
                 }
               ].map((plan) => (
                 <div
@@ -958,11 +958,9 @@ export default function HomePage() {
                       <li key={index}>{feature}</li>
                     ))}
                   </ul>
-                  {plan.cta && (
-                    <Link href="/login" className="cta-button-primary">
-                      {plan.cta}
-                    </Link>
-                  )}
+                  <button className={`plan-button ${plan.popular ? 'plan-button-primary' : ''}`}>
+                    {plan.cta}
+                  </button>
                 </div>
               ))}
             </div>

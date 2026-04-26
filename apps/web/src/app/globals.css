@@ -912,3 +912,45 @@ p {
 
 ... (all old styles commented out) ...
 */
+
+/* App-wide gradient background for non-landing pages */
+.app-background {
+  background: linear-gradient(135deg, #0a0a0a 0%, #0f1419 50%, #0a0f14 100%);
+  min-height: 100vh;
+}
+
+/* Remove page boundaries */
+main, section {
+  max-width: none;
+  padding-left: 24px;
+  padding-right: 24px;
+}
+
+/* Uniform app-wide styles */
+html, body {
+  overflow-x: hidden;
+}
+
+/* Subtle gradient background overlay */
+body::after {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.03) 0%, rgba(6, 182, 212, 0.02) 50%, transparent 100%);
+  pointer-events: none;
+  z-index: -5;
+}
+
+/* Remove page boundaries */
+section, main, .page-container {
+  max-width: none !important;
+  width: 100%;
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
