@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useScrollAnimation } from "../hooks/useScrollAnimation";
+import { motion, AnimatePresence } from "framer-motion";
 
 const features = [
   {
@@ -77,43 +78,128 @@ const features = [
 
 export default function HomePage() {
   const [scrolled, setScrolled] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
   const [activeFeature, setActiveFeature] = useState('architectural');
   const [activeFlowStep, setActiveFlowStep] = useState(0);
   const [selectedPlan, setSelectedPlan] = useState(1); // 0: Free, 1: Pro, 2: Enterprise
-  const socialProofRef = useScrollAnimation();
 
   useEffect(() => {
     const handleScroll = () => {
-      setScrolled(window.scrollY > 20);
+      if (window.scrollY > 80) {
+        setScrolled(true);
+      } else {
+        setScrolled(false);
+      }
     };
 
-    window.addEventListener('scroll', handleScroll);
+    // Initial check
+    handleScroll();
+    console.log('Scroll detection active, scrolled:', scrolled);
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
   return (
     <main className="landing-page">
-      {/* Navigation */}
-      <nav className={`navbar ${scrolled ? 'scrolled' : ''}`}>
-        <div className="navbar-container">
+      {/* Fixed wrapper for proper centering */}
+      <div className="navbar-wrapper">
+        <motion.nav
+          className="navbar"
+          initial={false}
+          animate={{
+            scale: scrolled ? 0.92 : 1,
+            y: scrolled ? 8 : 0,
+            borderRadius: scrolled ? "999px" : "0px",
+            backgroundColor: scrolled
+              ? "rgba(2, 6, 23, 0.85)"
+              : "transparent",
+            backdropFilter: scrolled ? "blur(25px)" : "blur(0px)",
+            WebkitBackdropFilter: scrolled ? "blur(25px)" : "blur(0px)",
+            border: scrolled ? "1px solid rgba(255, 255, 255, 0.12)" : "1px solid transparent",
+            boxShadow: scrolled
+              ? "0 8px 32px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.15)"
+              : "none",
+          }}
+          transition={{
+            type: "spring",
+            stiffness: 90,
+            damping: 18,
+            mass: 0.8,
+          }}
+          onHoverStart={() => scrolled && setIsHovered(true)}
+          onHoverEnd={() => setIsHovered(false)}
+          style={{
+            transformOrigin: "top center",
+          }}
+        >
+        <div className={`navbar-container ${scrolled ? 'island-mode' : ''}`}>
           <div className="navbar-logo">
             <span className="navbar-logo-gradient">CodeMap</span>
           </div>
-          <div className="navbar-links">
+
+          {/* Navigation links - animate opacity separately */}
+          <motion.div
+            className="navbar-links"
+            animate={{
+              gap: scrolled ? "16px" : "32px",
+            }}
+            transition={{
+              type: "spring",
+              stiffness: 90,
+              damping: 18,
+              mass: 0.8,
+            }}
+          >
             <Link href="#features">Features</Link>
             <Link href="#how-it-works">How it Works</Link>
             <Link href="#pricing">Pricing</Link>
-          </div>
+          </motion.div>
+
+          {/* CTA Buttons - animate separately */}
           <div className="navbar-actions">
-            <Link href="/login" className="navbar-button navbar-button-ghost">
-              Login
-            </Link>
-            <Link href="/login" className="navbar-button navbar-button-aurora">
-              Get Started
-            </Link>
+            <AnimatePresence mode="wait">
+              {!scrolled ? (
+                <>
+                  <motion.div
+                    key="login"
+                    initial={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.8 }}
+                    transition={{ duration: 0.15 }}
+                  >
+                    <Link href="/login" className="navbar-button navbar-button-ghost">
+                      Login
+                    </Link>
+                  </motion.div>
+                  <motion.div
+                    key="get-started-full"
+                    initial={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.8 }}
+                    transition={{ duration: 0.15 }}
+                  >
+                    <Link href="/login" className="navbar-button navbar-button-aurora">
+                      Get Started
+                    </Link>
+                  </motion.div>
+                </>
+              ) : (
+                <motion.div
+                  key="get-started-compact"
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.8 }}
+                  transition={{ duration: 0.15, delay: 0.05 }}
+                >
+                  <Link href="/login" className="navbar-button navbar-button-aurora navbar-button-compact">
+                    Get Started
+                  </Link>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         </div>
-      </nav>
+      </motion.nav>
+      </div>
 
       {/* Hero Section */}
       <section className="hero-section">
@@ -157,7 +243,7 @@ export default function HomePage() {
       </section>
 
       {/* Social Proof */}
-      <section ref={socialProofRef.ref} className={`social-proof ${socialProofRef.isVisible ? 'visible' : ''}`}>
+      <section className="social-proof">
         <div className="social-proof-container">
           <p className="social-proof-text">
             Powering next-generation engineering at
