@@ -137,7 +137,6 @@ export default function HomePage() {
               ? "rgba(2, 6, 23, 0.85)"
               : "transparent",
             backdropFilter: scrolled ? "blur(25px)" : "blur(0px)",
-            WebkitBackdropFilter: scrolled ? "blur(25px)" : "blur(0px)",
             border: scrolled ? "1px solid rgba(255, 255, 255, 0.12)" : "1px solid transparent",
             boxShadow: scrolled
               ? "0 8px 32px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.15)"
@@ -979,21 +978,46 @@ export default function HomePage() {
                 <div className="free-plan-preview">
                   <div className="free-plan-features">
                     <div className="free-feature-item">
-                      <div className="feature-icon-large">📁</div>
+                      <div className="feature-icon-large">
+                        <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+                          <circle cx="24" cy="24" r="20" fill="#3B82F6" fillOpacity="0.15"/>
+                          <path d="M14 18C14 16.8954 14.8954 16 16 16H32C33.1046 16 34 16.8954 34 18V30C34 31.1046 33.1046 32 32 32H16C14.8954 32 14 31.1046 14 30V18Z" fill="#3B82F6"/>
+                          <path d="M14 18L24 25L34 18" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                          <circle cx="24" cy="24" r="20" stroke="#3B82F6" strokeWidth="2"/>
+                        </svg>
+                      </div>
                       <div className="feature-content">
                         <div className="feature-title">3 Repositories</div>
                         <div className="feature-subtitle">Connect up to 3 GitHub repos</div>
                       </div>
                     </div>
                     <div className="free-feature-item">
-                      <div className="feature-icon-large">💬</div>
+                      <div className="feature-icon-large">
+                        <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+                          <circle cx="24" cy="24" r="20" fill="#10B981" fillOpacity="0.15"/>
+                          <circle cx="24" cy="24" r="20" stroke="#10B981" strokeWidth="2"/>
+                          <path d="M16 18C16 16.8954 16.8954 16 18 16H30C31.1046 16 32 16.8954 32 18V26C32 27.1046 31.1046 28 30 28H18C16.8954 28 16 27.1046 16 26V18Z" fill="#10B981"/>
+                          <circle cx="22" cy="32" r="2" fill="#10B981"/>
+                          <circle cx="26" cy="32" r="2" fill="#10B981"/>
+                          <path d="M20 36C20 34.8954 20.8954 34 22 34H26C27.1046 34 28 34.8954 28 36" stroke="#10B981" strokeWidth="2" strokeLinecap="round"/>
+                        </svg>
+                      </div>
                       <div className="feature-content">
                         <div className="feature-title">Smart Chat</div>
                         <div className="feature-subtitle">AI-powered code assistance</div>
                       </div>
                     </div>
                     <div className="free-feature-item">
-                      <div className="feature-icon-large">👥</div>
+                      <div className="feature-icon-large">
+                        <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+                          <circle cx="24" cy="24" r="20" fill="#8B5CF6" fillOpacity="0.15"/>
+                          <circle cx="18" cy="20" r="4" fill="#8B5CF6"/>
+                          <path d="M12 32C12 28.6863 14.6863 26 18 26H22C25.3137 26 28 28.6863 28 32" stroke="#8B5CF6" strokeWidth="2" strokeLinecap="round"/>
+                          <circle cx="30" cy="20" r="4" fill="#8B5CF6" fillOpacity="0.7"/>
+                          <path d="M28 32C28 28.6863 30.6863 26 34 26H38" stroke="#8B5CF6" strokeWidth="2" strokeLinecap="round"/>
+                          <circle cx="24" cy="24" r="20" stroke="#8B5CF6" strokeWidth="2"/>
+                        </svg>
+                      </div>
                       <div className="feature-content">
                         <div className="feature-title">Community Support</div>
                         <div className="feature-subtitle">Help from our community</div>
@@ -1012,7 +1036,15 @@ export default function HomePage() {
                 </div>
                 <div className="pro-plan-preview">
                   <div className="pro-highlight">
-                    <div className="pro-highlight-icon">⚡</div>
+                    <div className="pro-highlight-icon">
+                      <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+                        <circle cx="20" cy="20" r="16" fill="#F59E0B" fillOpacity="0.15"/>
+                        <path d="M20 8L14 14H18V20H22V14H26L20 8Z" fill="#F59E0B"/>
+                        <path d="M14 26H18V32H14V26Z" fill="#F59E0B"/>
+                        <path d="M22 26H26V32H22V26Z" fill="#F59E0B"/>
+                        <circle cx="20" cy="20" r="16" stroke="#F59E0B" strokeWidth="2"/>
+                      </svg>
+                    </div>
                     <div className="pro-highlight-text">
                       <div className="pro-highlight-title">Everything in Free, plus:</div>
                       <div className="pro-highlight-sub">Unlimited repositories & team features</div>
@@ -1020,17 +1052,42 @@ export default function HomePage() {
                   </div>
                   <div className="pro-features-grid">
                     <div className="pro-feature-card">
-                      <div className="pro-feature-icon">👥</div>
+                      <div className="pro-feature-icon">
+                        <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+                          <circle cx="20" cy="20" r="16" fill="#8B5CF6" fillOpacity="0.15"/>
+                          <circle cx="16" cy="17" r="3" fill="#8B5CF6"/>
+                          <path d="M10 28C10 25.2386 12.2386 23 15 23H19C21.7614 23 24 25.2386 24 28" stroke="#8B5CF6" strokeWidth="2" strokeLinecap="round"/>
+                          <circle cx="24" cy="17" r="3" fill="#8B5CF6" fillOpacity="0.7"/>
+                          <path d="M22 28C22 25.2386 24.2386 23 27 23H31" stroke="#8B5CF6" strokeWidth="2" strokeLinecap="round"/>
+                          <circle cx="20" cy="20" r="16" stroke="#8B5CF6" strokeWidth="2"/>
+                        </svg>
+                      </div>
                       <div className="pro-feature-title">Team Workspaces</div>
                       <div className="pro-feature-desc">Collaborate with your entire team</div>
                     </div>
                     <div className="pro-feature-card">
-                      <div className="pro-feature-icon">🏗️</div>
+                      <div className="pro-feature-icon">
+                        <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+                          <circle cx="20" cy="20" r="16" fill="#3B82F6" fillOpacity="0.15"/>
+                          <path d="M12 15C12 13.8954 12.8954 13 14 13H26C27.1046 13 28 13.8954 28 15V25C28 26.1046 27.1046 27 26 27H14C12.8954 27 12 26.1046 12 25V15Z" fill="#3B82F6"/>
+                          <path d="M12 15L20 21L28 15" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                          <circle cx="20" cy="20" r="16" stroke="#3B82F6" strokeWidth="2"/>
+                        </svg>
+                      </div>
                       <div className="pro-feature-title">Architecture Views</div>
                       <div className="pro-feature-desc">Visualize your codebase structure</div>
                     </div>
                     <div className="pro-feature-card">
-                      <div className="pro-feature-icon">⚡</div>
+                      <div className="pro-feature-icon">
+                        <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+                          <circle cx="20" cy="20" r="16" fill="#10B981" fillOpacity="0.15"/>
+                          <circle cx="20" cy="20" r="16" stroke="#10B981" strokeWidth="2"/>
+                          <path d="M13 15C13 13.8954 13.8954 13 15 13H25C26.1046 13 27 13.8954 27 15V22C27 23.1046 26.1046 24 25 24H15C13.8954 24 13 23.1046 13 22V15Z" fill="#10B981"/>
+                          <circle cx="18" cy="27" r="1.5" fill="#10B981"/>
+                          <circle cx="22" cy="27" r="1.5" fill="#10B981"/>
+                          <path d="M17 30C17 29.4477 17.4477 29 18 29H22C22.5523 29 23 29.4477 23 30" stroke="#10B981" strokeWidth="1.5" strokeLinecap="round"/>
+                        </svg>
+                      </div>
                       <div className="pro-feature-title">Priority Support</div>
                       <div className="pro-feature-desc">24-hour response time</div>
                     </div>
