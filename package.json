@@ -11,12 +11,21 @@
     "dev:api": "npm --workspace @codemap/api run start:dev",
     "build": "npm run build --workspaces",
     "lint": "npm run lint --workspaces",
-    "typecheck": "npm run typecheck --workspaces"
+    "typecheck": "npm run typecheck --workspaces",
+    "prisma:generate": "npm --workspace @codemap/api run prisma:generate",
+    "prisma:migrate": "npm --workspace @codemap/api run prisma:migrate",
+    "prisma:seed": "npm --workspace @codemap/api run prisma:seed",
+    "prisma:reset": "npm --workspace @codemap/api run prisma:reset",
+    "prisma:studio": "npm --workspace @codemap/api run prisma:studio"
   },
   "prisma": {
     "schema": "prisma/schema.prisma"
   },
+  "dependencies": {
+    "@prisma/client": "^5.22.0"
+  },
   "devDependencies": {
+    "prisma": "^5.22.0",
     "typescript": "^5.8.3"
   },
   "engines": {

@@ -77,6 +77,15 @@ const features = [
   }
 ];
 
+const trustedTeams = [
+  { name: 'GitHub', src: '/images/github-logo.svg', signal: 'Repo context' },
+  { name: 'Vercel', src: '/images/vercel-logo.svg', signal: 'Preview flows' },
+  { name: 'Linear', src: '/images/Linear_Logo_0.svg', signal: 'Issue maps' },
+  { name: 'Slack', src: '/images/slack-logo.svg', signal: 'Team answers' },
+  { name: 'Figma', src: '/images/Figma_Symbol_0.svg', signal: 'Design sync' },
+  { name: 'Stripe', src: '/images/stripe-ar21.svg', signal: 'API trails' },
+];
+
 export default function HomePage() {
   const [scrolled, setScrolled] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
@@ -263,218 +272,84 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Social Proof - Living, Breathing Version */}
+      {/* Social Proof */}
       <section className="social-proof">
         <div className="social-proof-container">
-          {/* Header */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={socialProofVisible ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
             transition={{ duration: 0.6 }}
             className="social-proof-header"
           >
+            <span className="social-proof-kicker">Live ecosystem signal</span>
             <h2 className="social-proof-title">
               Trusted by engineers building at scale
             </h2>
             <p className="social-proof-subtitle">
-              From indie devs to high-scale teams — shipping production code faster
+              From indie devs to high-scale teams - shipping production code faster
             </p>
           </motion.div>
 
-          {/* Clustered Floating Field - Logos as Nodes */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={socialProofVisible ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.95 }}
-            transition={{ duration: 0.8, delay: 0.1 }}
-            className="floating-logos-field"
+            initial={{ opacity: 0, y: 24 }}
+            animate={socialProofVisible ? { opacity: 1, y: 0 } : { opacity: 0, y: 24 }}
+            transition={{ duration: 0.7, delay: 0.1 }}
+            className="neon-social-panel"
           >
-            {/* Center Glow - The "Gravity" */}
-            <div className="field-center-glow"></div>
-
-            {/* Orbital Logos - True Circular Motion */}
-            {[
-              // Background Layer - Slowest orbit, farthest
-              { id: 1, radius: 110, angle: 0, speed: 35, src: '/images/stripe-ar21.svg', alt: 'Stripe', layer: 'back' },
-              { id: 2, radius: 100, angle: 180, speed: 32, src: '/images/github-logo.svg', alt: 'GitHub', layer: 'back' },
-
-              // Mid Layer - Medium speed
-              { id: 3, radius: 85, angle: 300, speed: 25, src: '/images/Figma_Symbol_0.svg', alt: 'Figma', layer: 'mid' },
-              { id: 4, radius: 90, angle: 60, speed: 28, src: '/images/vercel-logo.svg', alt: 'Vercel', layer: 'mid' },
-              { id: 5, radius: 95, angle: 150, speed: 26, src: '/images/google-logo.svg', alt: 'Google', layer: 'mid' },
-
-              // Front Layer - Fastest, closest
-              { id: 6, radius: 70, angle: 210, speed: 20, src: '/images/Linear_Logo_0.svg', alt: 'Linear', layer: 'front' },
-              { id: 7, radius: 75, angle: 330, speed: 22, src: '/images/slack-logo.svg', alt: 'Slack', layer: 'front' },
-              { id: 8, radius: 65, angle: 90, speed: 24, src: '/images/airbnb-ar21.svg', alt: 'Airbnb', layer: 'front' },
-            ].map((logo) => (
-              <motion.div
-                key={logo.id}
-                className={`orbit-container orbit-${logo.layer}`}
-                style={{
-                  position: 'absolute',
-                  left: '50%',
-                  top: '50%',
-                  width: 0,
-                  height: 0,
-                  zIndex: logo.layer === 'front' ? 10 : logo.layer === 'mid' ? 5 : 1,
-                }}
-                animate={{
-                  rotate: [logo.angle, logo.angle + 360],
-                }}
-                transition={{
-                  duration: logo.speed,
-                  repeat: Infinity,
-                  ease: "linear",
-                }}
-              >
+            <div className="neon-social-grid" aria-label="Trusted product ecosystem">
+              {trustedTeams.map((team, index) => (
                 <motion.div
-                  className={`floating-logo-node logo-${logo.layer}`}
-                  style={{
-                    translateX: `${logo.radius}px`,
-                  }}
-                  whileHover={{
-                    scale: 1.1,
-                    opacity: 1,
-                  }}
+                  key={team.name}
+                  className="neon-logo-chip"
+                  role="listitem"
+                  tabIndex={0}
+                  aria-label={`${team.name}: ${team.signal}`}
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={socialProofVisible ? { opacity: 1, y: 0 } : { opacity: 0, y: 12 }}
+                  transition={{ duration: 0.45, delay: 0.18 + index * 0.05 }}
+                  whileHover={{ y: -4 }}
                 >
-                  <img src={logo.src} alt={logo.alt} />
+                  <span className="neon-logo-orb" aria-hidden="true"></span>
+                  <img src={team.src} alt={team.name} />
+                  <span className="neon-chip-detail">{team.signal}</span>
                 </motion.div>
-              </motion.div>
-            ))}
-
-            {/* Field Label */}
-            <motion.div
-              className="field-label"
-              initial={{ opacity: 0 }}
-              animate={socialProofVisible ? { opacity: 1 } : { opacity: 0 }}
-              transition={{ delay: 1.2 }}
-            >
-              Powering teams across the ecosystem
-            </motion.div>
-          </motion.div>
-
-          {/* Ambient Data Band - Minimal Floating Data */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={socialProofVisible ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            className="ambient-data-band"
-          >
-            {/* Top Row - Main Numbers */}
-            <div className="ambient-data-row">
-              {/* Developers Stat */}
-              <motion.div
-                className="ambient-stat-group"
-                animate={{
-                  y: [0, -4, 0],
-                }}
-                transition={{
-                  duration: 5,
-                  repeat: Infinity,
-                  ease: "easeInOut",
-                  delay: 0,
-                }}
-              >
-                <div className="ambient-number">
-                  {socialProofVisible && (
-                    <>
-                      <CountUp end={10284} duration={2} separator="," />
-                      <span className="ambient-plus">+</span>
-                    </>
-                  )}
-                </div>
-                <div className="ambient-label">developers</div>
-
-                {/* Hover Detail */}
-                <div className="ambient-detail">
-                  <span className="ambient-trend">+42</span>
-                  <span className="ambient-trend-text">joined today</span>
-                </div>
-              </motion.div>
-
-              {/* Separator */}
-              <div className="ambient-separator"></div>
-
-              {/* Lines Stat */}
-              <motion.div
-                className="ambient-stat-group"
-                animate={{
-                  y: [0, -3, 0],
-                }}
-                transition={{
-                  duration: 6,
-                  repeat: Infinity,
-                  ease: "easeInOut",
-                  delay: 1,
-                }}
-              >
-                <div className="ambient-number">
-                  {socialProofVisible && (
-                    <>
-                      <CountUp end={52.4} duration={2} decimals={1} suffix="M" />
-                      <span className="ambient-plus">+</span>
-                    </>
-                  )}
-                </div>
-                <div className="ambient-label">lines indexed</div>
-
-                {/* Hover Detail */}
-                <div className="ambient-detail">
-                  <span className="ambient-trend">+120k</span>
-                  <span className="ambient-trend-text">lines/hr</span>
-                  <div className="ambient-breakdown">
-                    <span>JS 34%</span>
-                    <span>TS 28%</span>
-                    <span>Py 22%</span>
-                  </div>
-                </div>
-              </motion.div>
-
-              {/* Separator */}
-              <div className="ambient-separator"></div>
-
-              {/* Uptime Stat */}
-              <motion.div
-                className="ambient-stat-group"
-                animate={{
-                  y: [0, -4, 0],
-                }}
-                transition={{
-                  duration: 5.5,
-                  repeat: Infinity,
-                  ease: "easeInOut",
-                  delay: 2,
-                }}
-              >
-                <div className="ambient-number">
-                  {socialProofVisible && (
-                    <CountUp end={99.98} duration={2} decimals={2} suffix="%" />
-                  )}
-                </div>
-                <div className="ambient-label">uptime</div>
-
-                {/* Hover Detail */}
-                <div className="ambient-detail">
-                  <span className="ambient-indicator"></span>
-                  <span className="ambient-trend-text">no incidents</span>
-                  <div className="ambient-breakdown">
-                    <span>24h: 100%</span>
-                    <span>7d: 99.99%</span>
-                  </div>
-                </div>
-              </motion.div>
+              ))}
             </div>
 
-            {/* Live Activity Footer */}
-            <motion.div
-              className="ambient-footer"
-              initial={{ opacity: 0 }}
-              animate={socialProofVisible ? { opacity: 1 } : { opacity: 0 }}
-              transition={{ delay: 1.5 }}
-            >
-              <span className="ambient-pulse"></span>
-              <span>128 repos indexed in last hour</span>
-            </motion.div>
+            <div className="neon-social-divider" aria-hidden="true"></div>
+
+            <div className="neon-metrics-row">
+              <div className="neon-metric" tabIndex={0}>
+                <span className="neon-metric-value">
+                  {socialProofVisible && <CountUp end={10284} duration={2} separator="," />}
+                  <span>+</span>
+                </span>
+                <span className="neon-metric-label">developers</span>
+                <span className="neon-metric-note">+42 joined today</span>
+              </div>
+              <div className="neon-metric" tabIndex={0}>
+                <span className="neon-metric-value">
+                  {socialProofVisible && <CountUp end={52.4} duration={2} decimals={1} suffix="M" />}
+                  <span>+</span>
+                </span>
+                <span className="neon-metric-label">lines indexed</span>
+                <span className="neon-metric-note">120k lines/hr</span>
+              </div>
+              <div className="neon-metric" tabIndex={0}>
+                <span className="neon-metric-value">
+                  {socialProofVisible && <CountUp end={99.98} duration={2} decimals={2} suffix="%" />}
+                </span>
+                <span className="neon-metric-label">uptime</span>
+                <span className="neon-metric-note">no incidents</span>
+              </div>
+            </div>
+
+            <div className="neon-activity-rail">
+              <span className="neon-live-dot"></span>
+              <span>128 repos indexed in the last hour</span>
+              <span className="neon-rail-line" aria-hidden="true"></span>
+              <span>answers grounded with source citations</span>
+            </div>
           </motion.div>
         </div>
       </section>
