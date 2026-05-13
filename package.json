@@ -19,13 +19,9 @@
     "prisma:studio": "npm --workspace @codemap/api run prisma:studio"
   },
   "prisma": {
-    "schema": "prisma/schema.prisma"
-  },
-  "dependencies": {
-    "@prisma/client": "^5.22.0"
+    "schema": "apps/api/prisma/schema.prisma"
   },
   "devDependencies": {
-    "prisma": "^5.22.0",
     "typescript": "^5.8.3"
   },
   "engines": {
