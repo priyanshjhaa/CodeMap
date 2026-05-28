@@ -18,6 +18,8 @@ export function ProductShell({ children }: { children: React.ReactNode }) {
   const {
     appReady,
     pending,
+    bootstrapError,
+    repositoryError,
     repositories,
     activeRepoId,
     activeRepository,
@@ -51,17 +53,21 @@ export function ProductShell({ children }: { children: React.ReactNode }) {
         <div className="sidebar-section">
           <p className="eyebrow">Repositories</p>
           <div className="repo-switcher">
-            {repositories.map((repository) => (
-              <button
-                key={repository.id}
-                className={`repo-switch ${deferredRepoId === repository.id ? "repo-switch--active" : ""}`}
-                type="button"
-                onClick={() => setActiveRepo(repository.id)}
-              >
-                <strong>{repository.name}</strong>
-                <span>{repository.health.replace("_", " ")}</span>
-              </button>
-            ))}
+            {repositories.length ? (
+              repositories.map((repository) => (
+                <button
+                  key={repository.id}
+                  className={`repo-switch ${deferredRepoId === repository.id ? "repo-switch--active" : ""}`}
+                  type="button"
+                  onClick={() => setActiveRepo(repository.id)}
+                >
+                  <strong>{repository.name}</strong>
+                  <span>{repository.health.replace("_", " ")}</span>
+                </button>
+              ))
+            ) : (
+              <p className="empty-note">No repositories available yet.</p>
+            )}
           </div>
         </div>
 
@@ -78,26 +84,47 @@ export function ProductShell({ children }: { children: React.ReactNode }) {
         <header className="app-header card">
           <div>
             <p className="eyebrow">Active repository</p>
-            <h1>{activeRepository ? `${activeRepository.owner}/${activeRepository.name}` : "Loading repository"}</h1>
-            <p>{activeRepository?.description ?? "Fetching repository context and onboarding insights."}</p>
+            <h1>{activeRepository ? `${activeRepository.owner}/${activeRepository.name}` : "No repository selected"}</h1>
+            <p>{activeRepository?.description ?? "Connect a repository to populate dashboard, chat, and architecture data."}</p>
           </div>
           <div className="header-actions">
             <span className={`status-pill status-pill--${activeRepository?.syncStatus ?? "indexing"}`}>
               {activeRepository?.syncStatus ?? "loading"}
             </span>
-            <button className="button button--secondary" type="button" onClick={() => void triggerSync()}>
+            <button
+              className="button button--secondary"
+              type="button"
+              disabled={!activeRepoId || pending}
+              onClick={() => void triggerSync()}
+            >
               Re-sync repository
             </button>
           </div>
         </header>
 
-        {!appReady || pending ? (
+        {!appReady ? (
           <section className="card loading-card">
             <p className="eyebrow">Refreshing product state</p>
             <h2>Bringing your repository context into view.</h2>
             <div className="loading-bar">
               <span />
             </div>
+          </section>
+        ) : null}
+
+        {bootstrapError ? (
+          <section className="card">
+            <p className="eyebrow">Workspace status</p>
+            <h2>We could not load your workspace yet.</h2>
+            <p>{bootstrapError}</p>
+          </section>
+        ) : null}
+
+        {repositoryError ? (
+          <section className="card">
+            <p className="eyebrow">Repository status</p>
+            <h2>Repository data is partially unavailable.</h2>
+            <p>{repositoryError}</p>
           </section>
         ) : null}
 

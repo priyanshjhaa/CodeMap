@@ -1,7 +1,11 @@
+"use client";
+
 import Link from "next/link";
 import type { Route } from "next";
-import { syncProgressViews } from "../../../../lib/mock-data";
+import { useEffect, useState } from "react";
+import type { SyncProgressView } from "@codemap/shared";
 import { OnboardingSteps } from "../../../../components/onboarding-steps";
+import { getSyncProgress, startRepositorySync } from "../../../../lib/api-client";
 
 const steps: {
   href: Route;
@@ -29,27 +33,56 @@ const steps: {
   }
 ];
 
-const sync = syncProgressViews.repo_2;
-
 export default function SyncPage() {
+  const [sync, setSync] = useState<SyncProgressView | null>(null);
+  const [repoId, setRepoId] = useState("repo_1");
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const selectedRepoId = new URLSearchParams(window.location.search).get("repo") ?? "repo_1";
+    let cancelled = false;
+    setRepoId(selectedRepoId);
+
+    async function loadSync() {
+      try {
+        const initialSync = await startRepositorySync(selectedRepoId);
+        const latestSync = await getSyncProgress(selectedRepoId);
+
+        if (!cancelled) {
+          setSync(latestSync ?? initialSync);
+        }
+      } catch {
+        if (!cancelled) {
+          setError("Could not start repository sync. Choose a different repository or try again.");
+        }
+      }
+    }
+
+    void loadSync();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   return (
     <OnboardingSteps currentTitle="Show first-sync progress before the user lands in the product." steps={steps}>
       <div className="card onboarding-card">
         <p className="eyebrow">Repository sync</p>
-        <h2>{sync.stageLabel}</h2>
-        <p>{sync.currentStep}</p>
+        <h2>{sync?.stageLabel ?? "Preparing repository sync"}</h2>
+        <p>{error ?? sync?.currentStep ?? "CodeMap is preparing the first repository pass."}</p>
         <div className="meter">
-          <span style={{ width: `${sync.percentComplete}%` }} />
+          <span style={{ width: `${sync?.percentComplete ?? 18}%` }} />
         </div>
         <div className="step-pill-row">
-          {sync.steps.map((step) => (
+          {(sync?.steps ?? ["Connect GitHub access", "Fetch repository metadata", "Prepare first sync"]).map((step) => (
             <span key={step} className="step-pill">
               {step}
             </span>
           ))}
         </div>
-        <div className="button-row" style={{ marginTop: '2rem' }}>
-          <Link className="button" href="/dashboard">
+        <div className="button-row" style={{ marginTop: "2rem" }}>
+          <Link className="button" href={`/dashboard?repo=${repoId}`}>
             Open the product dashboard
           </Link>
           <Link className="button button--secondary" href="/onboarding/connect">

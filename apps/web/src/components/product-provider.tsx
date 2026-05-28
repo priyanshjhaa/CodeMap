@@ -28,7 +28,7 @@ import {
   listChatSessions,
   sendChatMessage,
   startRepositorySync
-} from "../lib/mock-api";
+} from "../lib/api-client";
 
 interface ProductContextValue {
   user: CurrentUser | null;
@@ -39,10 +39,12 @@ interface ProductContextValue {
   syncProgress: SyncProgressView | null;
   architecture: ArchitectureOverviewView | null;
   sessions: ChatSessionView[];
-  activeSessionId: string;
+  activeSessionId: string | null;
   selectedCitations: CitationPreview[];
   appReady: boolean;
   pending: boolean;
+  bootstrapError: string | null;
+  repositoryError: string | null;
   setActiveRepo: (repoId: string) => void;
   setActiveSession: (sessionId: string) => void;
   askQuestion: (message: string) => Promise<void>;
@@ -55,15 +57,17 @@ export function ProductProvider({ children }: PropsWithChildren) {
   const [user, setUser] = useState<CurrentUser | null>(null);
   const [workspace, setWorkspace] = useState<WorkspaceSummary | null>(null);
   const [repositories, setRepositories] = useState<RepositoryListItem[]>([]);
-  const [activeRepoId, setActiveRepoId] = useState("repo_1");
+  const [activeRepoId, setActiveRepoId] = useState("");
   const [activeRepository, setActiveRepository] = useState<RepositoryDetail | null>(null);
   const [syncProgress, setSyncProgress] = useState<SyncProgressView | null>(null);
   const [architecture, setArchitecture] = useState<ArchitectureOverviewView | null>(null);
   const [sessions, setSessions] = useState<ChatSessionView[]>([]);
-  const [activeSessionId, setActiveSessionId] = useState("session_1");
+  const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
   const [selectedCitations, setSelectedCitations] = useState<CitationPreview[]>([]);
   const [appReady, setAppReady] = useState(false);
   const [pending, setPending] = useState(false);
+  const [bootstrapError, setBootstrapError] = useState<string | null>(null);
+  const [repositoryError, setRepositoryError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -82,10 +86,18 @@ export function ProductProvider({ children }: PropsWithChildren) {
         setUser(workspaceResult.user);
         setWorkspace(workspaceResult.workspace);
         setRepositories(repositoryResult);
-        setActiveRepoId(workspaceResult.workspace.activeRepositoryId);
+        setBootstrapError(null);
+        setActiveRepoId(
+          repositoryResult.find((repository) => repository.id === workspaceResult.workspace.activeRepositoryId)?.id ??
+            repositoryResult[0]?.id ??
+            ""
+        );
         setAppReady(true);
       } catch (error) {
         console.error("Failed to bootstrap product context:", error);
+        setBootstrapError(
+          error instanceof Error ? error.message : "Unable to load workspace data."
+        );
         setAppReady(true);
       }
     }
@@ -99,15 +111,23 @@ export function ProductProvider({ children }: PropsWithChildren) {
 
   useEffect(() => {
     if (!activeRepoId) {
+      setActiveRepository(null);
+      setArchitecture(null);
+      setSessions([]);
+      setSelectedCitations([]);
+      setSyncProgress(null);
+      setActiveSessionId(null);
+      setRepositoryError(null);
       return;
     }
 
     let cancelled = false;
     setPending(true);
+    setRepositoryError(null);
 
     async function loadRepository() {
-      const [detail, architectureResult, sessionsResult, citationsResult, syncResult] =
-        await Promise.all([
+      const [detailResult, architectureResult, sessionsResult, citationsResult, syncResult] =
+        await Promise.allSettled([
           getRepositoryDetail(activeRepoId),
           getArchitectureOverview(activeRepoId),
           listChatSessions(activeRepoId),
@@ -119,13 +139,39 @@ export function ProductProvider({ children }: PropsWithChildren) {
         return;
       }
 
+      if (detailResult.status === "rejected") {
+        setActiveRepository(null);
+        setArchitecture(null);
+        setSessions([]);
+        setSelectedCitations([]);
+        setSyncProgress(null);
+        setActiveSessionId(null);
+        setRepositoryError(
+          detailResult.reason instanceof Error
+            ? detailResult.reason.message
+            : "Unable to load repository details."
+        );
+        setPending(false);
+        return;
+      }
+
+      const detail = detailResult.value;
+      const architectureValue =
+        architectureResult.status === "fulfilled" ? architectureResult.value : null;
+      const sessionsValue =
+        sessionsResult.status === "fulfilled" ? sessionsResult.value : [];
+      const citationsValue =
+        citationsResult.status === "fulfilled" ? citationsResult.value : [];
+      const syncValue = syncResult.status === "fulfilled" ? syncResult.value : null;
+
       startTransition(() => {
         setActiveRepository(detail);
-        setArchitecture(architectureResult);
-        setSessions(sessionsResult);
-        setActiveSessionId(sessionsResult[0]?.id ?? "session_1");
-        setSelectedCitations(citationsResult);
-        setSyncProgress(syncResult);
+        setArchitecture(architectureValue);
+        setSessions(sessionsValue);
+        setActiveSessionId(sessionsValue[0]?.id ?? null);
+        setSelectedCitations(citationsValue);
+        setSyncProgress(syncValue);
+        setRepositoryError(null);
         setPending(false);
       });
     }
@@ -138,24 +184,58 @@ export function ProductProvider({ children }: PropsWithChildren) {
   }, [activeRepoId]);
 
   async function askQuestion(message: string) {
+    if (!activeRepoId) {
+      return;
+    }
+
     setPending(true);
-    const result = await sendChatMessage(activeRepoId, activeSessionId, message);
-    startTransition(() => {
-      setSessions((current) =>
-        current.map((session) => (session.id === result.session.id ? result.session : session))
+    setRepositoryError(null);
+
+    try {
+      const result = await sendChatMessage(activeRepoId, activeSessionId, message);
+      startTransition(() => {
+        setSessions((current) => {
+          const existingIndex = current.findIndex((session) => session.id === result.session.id);
+          if (existingIndex === -1) {
+            return [result.session, ...current];
+          }
+
+          return current.map((session) =>
+            session.id === result.session.id ? result.session : session
+          );
+        });
+        setActiveSessionId(result.session.id);
+        setSelectedCitations(result.selectedCitations);
+        setPending(false);
+      });
+    } catch (error) {
+      setRepositoryError(
+        error instanceof Error ? error.message : "Unable to send chat message."
       );
-      setSelectedCitations(result.selectedCitations);
       setPending(false);
-    });
+    }
   }
 
   async function triggerSync() {
+    if (!activeRepoId) {
+      return;
+    }
+
     setPending(true);
-    const result = await startRepositorySync(activeRepoId);
-    startTransition(() => {
-      setSyncProgress(result);
+    setRepositoryError(null);
+
+    try {
+      const result = await startRepositorySync(activeRepoId);
+      startTransition(() => {
+        setSyncProgress(result);
+        setPending(false);
+      });
+    } catch (error) {
+      setRepositoryError(
+        error instanceof Error ? error.message : "Unable to start repository sync."
+      );
       setPending(false);
-    });
+    }
   }
 
   const value: ProductContextValue = {
@@ -171,6 +251,8 @@ export function ProductProvider({ children }: PropsWithChildren) {
     selectedCitations,
     appReady,
     pending,
+    bootstrapError,
+    repositoryError,
     setActiveRepo(repoId: string) {
       startTransition(() => {
         setActiveRepoId(repoId);

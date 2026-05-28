@@ -13,7 +13,7 @@ export function ChatWorkspace() {
     pending,
     activeRepository
   } = useProduct();
-  const [draft, setDraft] = useState("Where is authentication implemented?");
+  const [draft, setDraft] = useState("");
   const activeSession = sessions.find((session) => session.id === activeSessionId) ?? sessions[0];
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -33,17 +33,23 @@ export function ChatWorkspace() {
         <p className="eyebrow">Conversation threads</p>
         <h2>{activeRepository?.name ?? "Repository chat"}</h2>
         <div className="thread-list">
-          {sessions.map((session) => (
-            <button
-              key={session.id}
-              className={`thread-item ${activeSessionId === session.id ? "thread-item--active" : ""}`}
-              type="button"
-              onClick={() => setActiveSession(session.id)}
-            >
-              <strong>{session.title}</strong>
-              <span>{session.lastQuestion}</span>
-            </button>
-          ))}
+          {sessions.length ? (
+            sessions.map((session) => (
+              <button
+                key={session.id}
+                className={`thread-item ${activeSessionId === session.id ? "thread-item--active" : ""}`}
+                type="button"
+                onClick={() => setActiveSession(session.id)}
+              >
+                <strong>{session.title}</strong>
+                <span>{session.lastQuestion}</span>
+              </button>
+            ))
+          ) : (
+            <p className="empty-note">
+              No conversation threads yet. Your first message will create one.
+            </p>
+          )}
         </div>
       </aside>
 
@@ -53,7 +59,9 @@ export function ChatWorkspace() {
             <p className="eyebrow">Repository chat</p>
             <h2>{activeSession?.title ?? "New conversation"}</h2>
           </div>
-          <span className="status-pill status-pill--ready">Mocked live flow</span>
+          <span className={`status-pill status-pill--${activeRepository?.syncStatus ?? "indexing"}`}>
+            {activeRepository?.syncStatus ?? "loading"}
+          </span>
         </div>
 
         <div className="message-list">
@@ -76,14 +84,16 @@ export function ChatWorkspace() {
               <p>Retrieving the most relevant code context and shaping an onboarding-quality answer.</p>
             </article>
           ) : null}
-        </div>
 
-        <div className="starter-list starter-list--chat">
-          {activeRepository?.starterQuestions.map((question) => (
-            <button key={question} className="starter-chip" type="button" onClick={() => setDraft(question)}>
-              {question}
-            </button>
-          ))}
+          {!activeSession && !pending ? (
+            <article className="message-bubble message-bubble--assistant">
+              <span className="message-role">CodeMap</span>
+              <p>
+                Ask a repository question to start a new thread. Messages and citations will appear
+                here once the chat endpoint responds.
+              </p>
+            </article>
+          ) : null}
         </div>
 
         <form className="chat-form" onSubmit={onSubmit}>
@@ -104,17 +114,23 @@ export function ChatWorkspace() {
         <p className="eyebrow">Citation previews</p>
         <h2>Why this answer is grounded</h2>
         <div className="citation-list">
-          {selectedCitations.map((citation) => (
-            <article key={`${citation.filePath}-${citation.symbol ?? "file"}`} className="citation-item">
-              <strong>{citation.filePath}</strong>
-              <p>{citation.reason}</p>
-              <span>
-                {citation.symbol ? `${citation.symbol} · ` : ""}
-                {citation.lineStart ? `L${citation.lineStart}-${citation.lineEnd}` : "File context"}
-              </span>
-              <pre>{citation.excerpt}</pre>
-            </article>
-          ))}
+          {selectedCitations.length ? (
+            selectedCitations.map((citation) => (
+              <article key={`${citation.filePath}-${citation.symbol ?? "file"}`} className="citation-item">
+                <strong>{citation.filePath}</strong>
+                <p>{citation.reason}</p>
+                <span>
+                  {citation.symbol ? `${citation.symbol} · ` : ""}
+                  {citation.lineStart ? `L${citation.lineStart}-${citation.lineEnd}` : "File context"}
+                </span>
+                <pre>{citation.excerpt}</pre>
+              </article>
+            ))
+          ) : (
+            <p className="empty-note">
+              Citation previews will appear here after a repository answer includes source context.
+            </p>
+          )}
         </div>
       </aside>
     </div>

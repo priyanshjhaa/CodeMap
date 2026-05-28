@@ -235,12 +235,18 @@ p {
   color: #fffaf6;
 }
 
+.button:disabled {
+  cursor: not-allowed;
+  opacity: 0.58;
+  transform: none;
+}
+
 .button--secondary,
 .starter-chip,
 .step-pill {
-  background: rgba(255, 250, 244, 0.9);
+  background: rgba(255, 255, 255, 0.05);
   border-color: var(--border);
-  color: var(--accent-deep);
+  color: var(--accent-light);
   padding: 6px 12px;
   font-size: 0.8rem;
 }
@@ -506,6 +512,12 @@ p {
   color: var(--text);
 }
 
+.form-error {
+  margin: -4px 0 16px;
+  color: #fca5a5;
+  font-size: 0.85rem;
+}
+
 .onboarding-footer {
   margin-top: 16px;
   padding-top: 16px;
@@ -648,6 +660,7 @@ p {
   display: grid;
   gap: 20px;
   align-content: start;
+  min-width: 0;
 }
 
 .app-header h1 {
@@ -658,12 +671,15 @@ p {
   border-radius: 999px;
   padding: 8px 12px;
   border: 1px solid var(--border);
-  background: rgba(255, 250, 244, 0.92);
+  background: rgba(255, 255, 255, 0.04);
   text-transform: capitalize;
+  white-space: nowrap;
 }
 
 .status-pill--ready {
   color: var(--success);
+  border-color: rgba(16, 185, 129, 0.32);
+  background: rgba(16, 185, 129, 0.1);
 }
 
 .status-pill--indexing,
@@ -675,6 +691,8 @@ p {
 .status-pill--failed,
 .status-pill--access_revoked {
   color: var(--danger);
+  border-color: rgba(239, 68, 68, 0.28);
+  background: rgba(239, 68, 68, 0.08);
 }
 
 .loading-card {
@@ -738,14 +756,18 @@ p {
 }
 
 .chat-layout {
-  grid-template-columns: 260px minmax(0, 1fr) 320px;
+  grid-template-columns: minmax(210px, 0.68fr) minmax(330px, 1.25fr) minmax(300px, 0.95fr);
   align-items: start;
+  gap: 20px;
+  min-width: 0;
 }
 
 .chat-sidebar,
 .chat-main,
 .citation-rail {
   min-height: 620px;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .message-list {
@@ -793,25 +815,89 @@ p {
   resize: vertical;
   border-radius: var(--radius-md);
   border: 1px solid var(--border);
-  background: rgba(255, 255, 255, 0.92);
+  background: rgba(6, 12, 14, 0.78);
   padding: 16px;
   color: var(--text);
+}
+
+.chat-form textarea {
+  min-height: 116px;
+  max-height: 220px;
+  color: rgba(255, 255, 255, 0.88);
+  caret-color: var(--accent);
+}
+
+.chat-form textarea::placeholder {
+  color: rgba(255, 255, 255, 0.42);
+}
+
+.chat-form textarea:focus {
+  outline: none;
+  border-color: rgba(16, 185, 129, 0.55);
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
 }
 
 .diagram-block,
 .citation-item pre {
   overflow: auto;
-  background: var(--surface-ink);
-  color: #f8f0e5;
+  background: rgba(2, 6, 8, 0.86);
+  color: rgba(226, 232, 240, 0.86);
 }
 
 .citation-item pre {
+  max-width: 100%;
   white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  margin: 12px 0 0;
+}
+
+.citation-item {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.citation-item strong {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sidebar-section--user strong,
+.sidebar-section--user span {
+  display: block;
+  min-width: 0;
+}
+
+.citation-item span {
+  display: block;
+  color: rgba(255, 255, 255, 0.78);
 }
 
 .thread-item,
 .repo-switch {
   text-align: left;
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.repo-switch strong,
+.thread-item strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.repo-switch span,
+.thread-item span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .starter-list--chat {
@@ -841,7 +927,7 @@ p {
 
 @media (max-width: 1120px) {
   .chat-layout {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .citation-rail,

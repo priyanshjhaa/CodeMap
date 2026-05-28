@@ -31,17 +31,22 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     strategy: "jwt"
   },
   pages: {
-    signIn: "/"
+    signIn: "/login"
   },
   callbacks: {
     async signIn({ user, account }) {
       if (!account?.access_token) return false;
 
-      // Sync with backend
+      const backendBaseUrl = process.env.API_BASE_URL;
+      if (!backendBaseUrl) {
+        return true;
+      }
+
+      // Let frontend OAuth succeed even if backend sync is not ready yet.
       try {
-        const response = await fetch(`${process.env.API_BASE_URL}/api/auth/github/callback`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+        const response = await fetch(`${backendBaseUrl}/api/auth/github/callback`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             user: {
               email: user.email,
@@ -53,24 +58,23 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
               refresh_token: account.refresh_token,
               expires_at: account.expires_at
             }
-          }),
-          credentials: 'include'
+          })
         });
 
         if (!response.ok) {
-          console.error('Failed to sync with backend');
-          return false;
+          console.error("Failed to sync GitHub session with backend", response.status);
+          return true;
         }
 
-        const data = await response.json();
-        // Store userId in token for session callback
-        user.id = data.userId;
-
-        return true;
+        const data = (await response.json()) as { userId?: string };
+        if (data.userId) {
+          user.id = data.userId;
+        }
       } catch (error) {
-        console.error('Auth callback error:', error);
-        return false;
+        console.error("Auth callback error:", error);
       }
+
+      return true;
     },
 
     async jwt({ token, account, user }) {

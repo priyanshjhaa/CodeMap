@@ -103,9 +103,7 @@ export default function HomePage() {
       }
     };
 
-    // Initial check
     handleScroll();
-    console.log('Scroll detection active, scrolled:', scrolled);
 
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);

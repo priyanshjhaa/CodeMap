@@ -1,6 +1,11 @@
+"use client";
+
 import Link from "next/link";
 import type { Route } from "next";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { OnboardingSteps } from "../../../../components/onboarding-steps";
+import { createWorkspace } from "../../../../lib/api-client";
 
 const steps: {
   href: Route;
@@ -29,9 +34,40 @@ const steps: {
 ];
 
 export default function WorkspaceOnboardingPage() {
+  const router = useRouter();
+  const [workspaceName, setWorkspaceName] = useState("Acme Engineering");
+  const [teamSize, setTeamSize] = useState("11-50");
+  const [goal, setGoal] = useState("onboarding");
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError(null);
+
+    if (!workspaceName.trim()) {
+      setError("Add a workspace name to continue.");
+      return;
+    }
+
+    setPending(true);
+
+    try {
+      await createWorkspace({
+        name: workspaceName.trim(),
+        teamSize,
+        goal
+      });
+      router.push("/onboarding/connect");
+    } catch {
+      setError("Could not create the workspace. Try again in a moment.");
+      setPending(false);
+    }
+  }
+
   return (
     <OnboardingSteps currentTitle="Create a workspace that feels ready for real team onboarding." steps={steps}>
-      <div className="card onboarding-card">
+      <form className="card onboarding-card" onSubmit={onSubmit}>
         <div className="onboarding-header">
           <span className="eyebrow">Step 1 of 3</span>
           <div className="progress-bar">
@@ -51,14 +87,20 @@ export default function WorkspaceOnboardingPage() {
               type="text"
               id="workspace-name"
               placeholder="e.g., Acme Engineering"
-              defaultValue="Acme Engineering"
+              value={workspaceName}
               className="form-input"
+              onChange={(event) => setWorkspaceName(event.target.value)}
             />
           </div>
 
           <div className="form-group">
             <label htmlFor="team-size">Team size</label>
-            <select id="team-size" className="form-input" defaultValue="11-50">
+            <select
+              id="team-size"
+              className="form-input"
+              value={teamSize}
+              onChange={(event) => setTeamSize(event.target.value)}
+            >
               <option value="1-10">1-10 engineers</option>
               <option value="11-50">11-50 engineers</option>
               <option value="51-200">51-200 engineers</option>
@@ -68,7 +110,12 @@ export default function WorkspaceOnboardingPage() {
 
           <div className="form-group">
             <label htmlFor="goal">Primary goal</label>
-            <select id="goal" className="form-input">
+            <select
+              id="goal"
+              className="form-input"
+              value={goal}
+              onChange={(event) => setGoal(event.target.value)}
+            >
               <option value="onboarding">Reduce onboarding time</option>
               <option value="knowledge">Improve knowledge sharing</option>
               <option value="code-review">Speed up code reviews</option>
@@ -77,21 +124,21 @@ export default function WorkspaceOnboardingPage() {
           </div>
         </div>
 
+        {error ? <p className="form-error">{error}</p> : null}
+
         <div className="button-row">
-          <Link className="button" href="/onboarding/connect">
-            Continue
-          </Link>
+          <button className="button" type="submit" disabled={pending}>
+            {pending ? "Creating workspace..." : "Continue"}
+          </button>
           <Link className="button button--secondary" href="/login">
             Back
           </Link>
         </div>
 
         <div className="onboarding-footer">
-          <p className="trust-text">
-            ✓ You can update these settings later
-          </p>
+          <p className="trust-text">You can update these settings later.</p>
         </div>
-      </div>
+      </form>
     </OnboardingSteps>
   );
 }

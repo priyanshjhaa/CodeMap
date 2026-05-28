@@ -3,8 +3,16 @@
 import Link from "next/link";
 import { signInWithGitHub } from "../lib/actions";
 
-export function AuthCard() {
+type AuthCardProps = {
+  githubEnabled: boolean;
+};
+
+export function AuthCard({ githubEnabled }: AuthCardProps) {
   const handleGitHubSignIn = async () => {
+    if (!githubEnabled) {
+      return;
+    }
+
     await signInWithGitHub();
   };
 
@@ -16,10 +24,19 @@ export function AuthCard() {
         Connect your GitHub account to start analyzing your repositories with AI-powered insights.
       </p>
 
+      {!githubEnabled ? (
+        <p className="form-error">
+          GitHub OAuth is not configured yet. Add `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`, and
+          `NEXTAUTH_SECRET` to enable sign-in.
+        </p>
+      ) : null}
+
       <div className="stack-list">
         <div className="inline-stat">
           <strong>GitHub OAuth</strong>
-          <span>Secure authentication with your GitHub account</span>
+          <span>
+            {githubEnabled ? "Secure authentication with your GitHub account" : "Waiting for OAuth configuration"}
+          </span>
         </div>
         <div className="inline-stat">
           <strong>Workspace onboarding</strong>
@@ -28,9 +45,11 @@ export function AuthCard() {
       </div>
 
       <div className="button-row">
-        <button className="button" onClick={handleGitHubSignIn}>
-          Continue with GitHub
-        </button>
+        {githubEnabled ? (
+          <button className="button" onClick={handleGitHubSignIn}>
+            Continue with GitHub
+          </button>
+        ) : null}
         <Link className="button button--secondary" href="/">
           Back to landing
         </Link>

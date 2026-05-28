@@ -46,7 +46,9 @@ export default function ConnectPage() {
       } catch (err) {
         console.error("Failed to load repositories:", err);
         setError(
-          "Failed to load repositories. Please make sure you've connected your GitHub account."
+          err instanceof Error
+            ? err.message
+            : "Failed to load repositories. Please make sure you've connected your GitHub account."
         );
       } finally {
         setLoading(false);

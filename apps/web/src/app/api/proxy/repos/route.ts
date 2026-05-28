@@ -1,8 +1,31 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
+import type { FrontendRepoState, RepositoryListItem } from "@codemap/shared";
 
-export async function GET(request: NextRequest) {
+type BackendRepository = {
+  id?: string;
+  providerRepoId?: string;
+  name: string;
+  owner: string;
+  description?: string | null;
+  visibility?: "public" | "private";
+  defaultBranch?: string | null;
+  language?: string | null;
+  health?: FrontendRepoState;
+  lastActivity?: string | null;
+  fileCount?: number | null;
+};
+
+export async function GET() {
   try {
-    const backendUrl = process.env.API_BASE_URL || "http://localhost:4000";
+    const backendUrl = process.env.API_BASE_URL;
+
+    if (!backendUrl) {
+      return NextResponse.json(
+        { error: "API_BASE_URL is not configured" },
+        { status: 503 }
+      );
+    }
+
     const response = await fetch(`${backendUrl}/api/repos`, {
       method: "GET",
       headers: {
@@ -19,9 +42,8 @@ export async function GET(request: NextRequest) {
 
     const backendData = await response.json();
 
-    // Map backend data to frontend format
-    const mappedData = backendData.map((repo: any) => ({
-      id: repo.providerRepoId || repo.id,
+    const mappedData: RepositoryListItem[] = (backendData as BackendRepository[]).map((repo) => ({
+      id: repo.providerRepoId ?? repo.id ?? `${repo.owner}/${repo.name}`,
       name: repo.name,
       owner: repo.owner,
       description: repo.description || "No description available",

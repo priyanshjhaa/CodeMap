@@ -1,28 +1,18 @@
-"use client";
-
+import { redirect } from "next/navigation";
+import { OnboardingChrome } from "../../../components/onboarding-chrome";
+import { auth } from "../../../lib/auth";
 import "../../onboarding.css";
-import { useEffect } from "react";
 
-export default function OnboardingLayout({ children }: { children: React.ReactNode }) {
-  useEffect(() => {
-    // Hide both the background image and overlay on onboarding pages
-    const bgContainers = document.querySelectorAll('.fixed.inset-0.-z-20, .fixed.inset-0.-z-10');
-    bgContainers.forEach(bg => {
-      (bg as HTMLElement).style.display = 'none';
-    });
+export default async function OnboardingLayout({
+  children
+}: {
+  children: React.ReactNode;
+}) {
+  const session = await auth();
 
-    return () => {
-      // Restore when leaving onboarding
-      bgContainers.forEach(bg => {
-        (bg as HTMLElement).style.display = '';
-      });
-    };
-  }, []);
+  if (!session?.user) {
+    redirect("/login");
+  }
 
-  return (
-    <>
-      <div className="onboarding-background"></div>
-      {children}
-    </>
-  );
+  return <OnboardingChrome>{children}</OnboardingChrome>;
 }
