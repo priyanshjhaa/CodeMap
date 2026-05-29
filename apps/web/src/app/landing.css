@@ -8,6 +8,13 @@
   min-height: 100vh;
 }
 
+.landing-page,
+.landing-page > section,
+.landing-page > main {
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
+
 /* Remove section boundaries */
 .landing-page > section {
   position: relative;
@@ -69,7 +76,7 @@
 }
 
 .navbar-links a {
-  color: rgba(255, 255, 255, 0.6);
+  color: rgba(0, 0, 0, 0.82);
   font-size: 0.95rem;
   font-weight: 500;
   transition: color 160ms ease;
@@ -82,7 +89,7 @@
 }
 
 .navbar-links a:hover {
-  color: rgba(255, 255, 255, 0.9);
+  color: rgba(0, 0, 0, 1);
 }
 
 .navbar-button-compact {
@@ -123,14 +130,9 @@
 }
 
 .navbar-logo-gradient {
-  background: linear-gradient(135deg, #10b981, #06b6d4, #10b981, #06b6d4);
-  background-size: 300% 300%;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: #0f8b58;
   position: relative;
   z-index: 1;
-  animation: flowingGradient 4s ease infinite;
 }
 
 /* Glowing effect for logo */
@@ -140,24 +142,9 @@
   left: 0;
   top: 0;
   z-index: -1;
-  background: linear-gradient(135deg, #10b981, #06b6d4);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  filter: blur(20px);
-  opacity: 0.6;
-}
-
-@keyframes flowingGradient {
-  0% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
-  100% {
-    background-position: 0% 50%;
-  }
+  color: rgba(15, 139, 88, 0.2);
+  filter: blur(18px);
+  opacity: 0.8;
 }
 
 .navbar-links {
@@ -169,7 +156,7 @@
 }
 
 .navbar-links a {
-  color: rgba(255, 255, 255, 0.6);
+  color: rgba(0, 0, 0, 0.82);
   font-size: 0.95rem;
   font-weight: 500;
   transition: color 160ms ease;
@@ -177,7 +164,7 @@
 }
 
 .navbar-links a:hover {
-  color: rgba(255, 255, 255, 0.9);
+  color: rgba(0, 0, 0, 1);
 }
 
 .navbar-actions {
@@ -200,35 +187,32 @@
 }
 
 .navbar-button-ghost {
-  background: transparent;
-  border: 1px solid var(--border);
-  color: var(--text);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  color: rgba(8, 24, 14, 0.8);
 }
 
 .navbar-button-ghost:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.18);
+  color: rgba(8, 24, 14, 0.96);
 }
 
 /* Aurora gradient navbar button with flowing animation */
 .navbar-button-aurora {
-  background: linear-gradient(135deg, #10b981, #06b6d4, #10b981, #06b6d4);
-  background-size: 300% 300%;
-  animation: flowingGradient 4s ease infinite;
-  border: none;
-  color: #000;
+  background: linear-gradient(135deg, #118a57 0%, #18a767 100%);
+  border: 1px solid rgba(10, 79, 47, 0.12);
+  color: #f5fff8;
   box-shadow:
-    0 0 20px rgba(16, 185, 129, 0.4),
-    0 0 40px rgba(16, 185, 129, 0.2),
-    0 0 60px rgba(16, 185, 129, 0.1);
+    0 12px 26px rgba(17, 87, 54, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.16);
   transition: all 0.3s ease;
 }
 
 .navbar-button-aurora:hover {
   box-shadow:
-    0 0 30px rgba(6, 182, 212, 0.5),
-    0 0 60px rgba(6, 182, 212, 0.3),
-    0 0 90px rgba(6, 182, 212, 0.1);
-  transform: translateY(-1px) scale(1.05);
+    0 16px 32px rgba(17, 87, 54, 0.24),
+    inset 0 1px 0 rgba(255, 255, 255, 0.18);
+  transform: translateY(-1px);
 }
 
 .navbar-button-filled {
