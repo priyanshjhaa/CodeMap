@@ -7,6 +7,21 @@ import { formatDateLabel } from "../lib/format";
 
 export function DashboardHome() {
   const { activeRepository, syncProgress, architecture, repositories } = useProduct();
+  const repoName = activeRepository ? `${activeRepository.owner}/${activeRepository.name}` : "your repository";
+  const architectureReady =
+    architecture?.readiness === "complete"
+      ? "Architecture overview is ready."
+      : architecture?.readiness === "partial"
+        ? "Architecture notes are still filling in."
+        : "Architecture mapping has not started yet.";
+  const syncSummary = syncProgress?.currentStep ?? "Pick a repository and start from the first guided action.";
+  const nextActionHref =
+    syncProgress?.state === "empty" ? ("/dashboard/syncs" as Route) : ("/dashboard/chat" as Route);
+  const nextActionLabel = syncProgress?.state === "empty" ? "Open sync setup" : "Open repository chat";
+  const nextActionBody =
+    syncProgress?.state === "empty"
+      ? "Start the first indexing pass so the product can build repository context."
+      : "Ask onboarding questions once the repository context looks good.";
 
   if (!repositories.length) {
     return (
@@ -23,15 +38,87 @@ export function DashboardHome() {
 
   return (
     <div className="content-stack">
-      <section className="hero-grid">
-        <article className="card summary-card">
-          <p className="eyebrow">Repository snapshot</p>
-          <h2>{activeRepository?.name ?? "Repository overview"}</h2>
+      <section className="dashboard-focus">
+        <article className="card dashboard-hero-card">
+          <p className="eyebrow">Start here</p>
+          <h2>{activeRepository?.name ?? "Choose a repository"}</h2>
           <p>
             {activeRepository?.description ??
               "Repository metadata will appear here once the overview endpoint is available."}
           </p>
-          <div className="stats-grid stats-grid--three">
+          <div className="dashboard-checklist">
+            <div className="dashboard-checklist__item">
+              <span>Repository</span>
+              <strong>{repoName}</strong>
+            </div>
+            <div className="dashboard-checklist__item">
+              <span>Sync status</span>
+              <strong>{syncProgress?.stageLabel ?? "Waiting to start"}</strong>
+            </div>
+            <div className="dashboard-checklist__item">
+              <span>Next step</span>
+              <strong>{syncSummary}</strong>
+            </div>
+          </div>
+          <div className="button-row dashboard-hero-actions">
+            <Link className="button" href={nextActionHref}>
+              {nextActionLabel}
+            </Link>
+            <Link className="button button--secondary" href={"/dashboard/architecture" as Route}>
+              View architecture
+            </Link>
+          </div>
+        </article>
+
+        <article className="card dashboard-next-card">
+          <p className="eyebrow">What to do now</p>
+          <h3>{nextActionLabel}</h3>
+          <p>{nextActionBody}</p>
+          <div className="meter">
+            <span style={{ width: `${syncProgress?.percentComplete ?? 0}%` }} />
+          </div>
+          <span className="dashboard-supporting-copy">{architectureReady}</span>
+        </article>
+      </section>
+
+      <section className="dashboard-paths">
+        <Link className="card dashboard-path-card" href={"/dashboard/chat" as Route}>
+          <p className="eyebrow">Ask questions</p>
+          <h3>Repository chat</h3>
+          <p>Use natural questions to understand modules, ownership, and file locations.</p>
+        </Link>
+
+        <Link className="card dashboard-path-card" href={"/dashboard/architecture" as Route}>
+          <p className="eyebrow">See the shape</p>
+          <h3>Architecture view</h3>
+          <p>
+            {architecture?.summary ??
+              "Open a calmer summary of entry points, major flows, and reading paths."}
+          </p>
+        </Link>
+
+        <Link className="card dashboard-path-card" href={"/dashboard/syncs" as Route}>
+          <p className="eyebrow">Track readiness</p>
+          <h3>Sync progress</h3>
+          <p>Check whether repository context is ready before deeper onboarding work begins.</p>
+        </Link>
+      </section>
+
+      <section className="dashboard-notes">
+        <article className="card dashboard-note-card">
+          <p className="eyebrow">Recommended reads</p>
+          <ul className="bullet-list">
+            {architecture?.recommendedReads?.length ? (
+              architecture.recommendedReads.slice(0, 4).map((item) => <li key={item}>{item}</li>)
+            ) : (
+              <li>Reading suggestions will appear after architecture analysis completes.</li>
+            )}
+          </ul>
+        </article>
+
+        <article className="card dashboard-note-card">
+          <p className="eyebrow">Quick context</p>
+          <div className="dashboard-facts">
             <div>
               <span>Branch</span>
               <strong>{activeRepository?.defaultBranch ?? "Not available"}</strong>
@@ -48,114 +135,11 @@ export function DashboardHome() {
                   : "Not indexed yet"}
               </strong>
             </div>
+            <div>
+              <span>Connected repos</span>
+              <strong>{repositories.length}</strong>
+            </div>
           </div>
-        </article>
-
-        <article className="card progress-card">
-          <p className="eyebrow">Sync readiness</p>
-          <h2>{syncProgress?.stageLabel ?? "Waiting for sync status"}</h2>
-          <p>
-            {syncProgress?.currentStep ??
-              "Trigger a repository sync to populate indexing progress and repository health."}
-          </p>
-          <div className="meter">
-            <span style={{ width: `${syncProgress?.percentComplete ?? 0}%` }} />
-          </div>
-          <div className="step-pill-row">
-            {(syncProgress?.steps ?? ["Repository connected", "Sync queued", "Analysis available"]).map(
-              (step) => (
-                <span key={step} className="step-pill">
-                  {step}
-                </span>
-              )
-            )}
-          </div>
-        </article>
-      </section>
-
-      <section className="two-column-layout">
-        <article className="card">
-          <p className="eyebrow">Chat workspace</p>
-          <h3>Start repository Q&amp;A</h3>
-          <p>
-            Use chat to ask about modules, flows, ownership boundaries, and files that matter for
-            onboarding.
-          </p>
-          <div className="starter-list">
-            <Link className="starter-chip" href={"/dashboard/chat" as Route}>
-              Open repository chat
-            </Link>
-          </div>
-        </article>
-
-        <article className="card">
-          <p className="eyebrow">Architecture snapshot</p>
-          <h3>
-            {architecture
-              ? architecture.readiness === "complete"
-                ? "Architecture overview ready"
-                : "Architecture analysis in progress"
-              : "Architecture analysis unavailable"}
-          </h3>
-          <p>
-            {architecture?.summary ??
-              "This area will summarize entry points, major flows, and recommended reads once the backend overview is connected."}
-          </p>
-          <Link className="text-link text-link--prominent" href="/dashboard/architecture">
-            Open full architecture view
-          </Link>
-        </article>
-      </section>
-
-      <section className="card">
-        <p className="eyebrow">Workspace structure</p>
-        <h3>Core product surfaces</h3>
-        <div className="feature-grid">
-          <Link className="subtle-card" href={"/dashboard" as Route}>
-            <strong>Dashboard</strong>
-            <p>Repository metadata, sync readiness, and the current state of the workspace.</p>
-          </Link>
-          <Link className="subtle-card" href={"/dashboard/chat" as Route}>
-            <strong>Chat</strong>
-            <p>Question-answer workflows tied to the selected repository.</p>
-          </Link>
-          <Link className="subtle-card" href={"/dashboard/architecture" as Route}>
-            <strong>Architecture</strong>
-            <p>System map, entry points, and generated overview content.</p>
-          </Link>
-          <Link className="subtle-card" href={"/dashboard/syncs" as Route}>
-            <strong>Syncs</strong>
-            <p>Indexing runs, status transitions, and repository processing history.</p>
-          </Link>
-        </div>
-      </section>
-
-      <section className="two-column-layout">
-        <article className="card">
-          <p className="eyebrow">Recommended reads</p>
-          <ul className="bullet-list">
-            {architecture?.recommendedReads?.length ? (
-              architecture.recommendedReads.map((item) => <li key={item}>{item}</li>)
-            ) : (
-              <li>Recommended reads will appear after architecture analysis completes.</li>
-            )}
-          </ul>
-        </article>
-        <article className="card">
-          <p className="eyebrow">Repository coverage</p>
-          <ul className="bullet-list">
-            <li>{repositories.length} repository record(s) are currently connected to this workspace.</li>
-            <li>
-              {syncProgress
-                ? `Current sync state: ${syncProgress.state.replace("_", " ")}.`
-                : "Sync status has not been loaded yet."}
-            </li>
-            <li>
-              {activeRepository
-                ? `Selected repository: ${activeRepository.owner}/${activeRepository.name}.`
-                : "Select a repository to load details."}
-            </li>
-          </ul>
         </article>
       </section>
     </div>

@@ -5,6 +5,7 @@ import type { Route } from "next";
 import { usePathname } from "next/navigation";
 import { useDeferredValue } from "react";
 import { useProduct } from "./product-provider";
+import { signOutFromCodeMap } from "../lib/actions";
 
 const navItems = [
   { href: "/dashboard" as Route, label: "Dashboard" },
@@ -36,7 +37,11 @@ export function ProductShell({ children }: { children: React.ReactNode }) {
         <div className="sidebar-brand">
           <p className="eyebrow">CodeMap</p>
           <h2>{workspace?.name ?? "Loading workspace"}</h2>
-          <p>{workspace ? `${workspace.teamSize} teammates using repository onboarding` : "Setting up your workspace view"}</p>
+          <p>
+            {workspace
+              ? `${workspace.teamSize} teammates using repository onboarding`
+              : "Setting up your workspace view"}
+          </p>
         </div>
 
         <nav className="sidebar-nav">
@@ -72,23 +77,44 @@ export function ProductShell({ children }: { children: React.ReactNode }) {
         </div>
 
         <div className="sidebar-section sidebar-section--user">
-          <div className="avatar">{user?.avatarLabel ?? "CM"}</div>
+          <div className="avatar">
+            {user?.avatarUrl ? (
+              <img src={user.avatarUrl} alt={user.name ? `${user.name} avatar` : "User avatar"} />
+            ) : (
+              user?.avatarLabel ?? "CM"
+            )}
+          </div>
           <div>
             <strong>{user?.name ?? "Loading user"}</strong>
             <span>{user?.role ?? "Preparing workspace"}</span>
           </div>
         </div>
+
+        <form action={signOutFromCodeMap} className="sidebar-signout">
+          <button className="button button--secondary button--full" type="submit">
+            Sign out
+          </button>
+        </form>
       </aside>
 
       <div className="app-main">
         <header className="app-header card">
-          <div>
-            <p className="eyebrow">Active repository</p>
-            <h1>{activeRepository ? `${activeRepository.owner}/${activeRepository.name}` : "No repository selected"}</h1>
-            <p>{activeRepository?.description ?? "Connect a repository to populate dashboard, chat, and architecture data."}</p>
+          <div className="app-header__copy">
+            <p className="eyebrow">Current repository</p>
+            <h1>
+              {activeRepository
+                ? `${activeRepository.owner}/${activeRepository.name}`
+                : "No repository selected"}
+            </h1>
+            <p>
+              {activeRepository?.description ??
+                "Connect a repository to populate dashboard, chat, and architecture data."}
+            </p>
           </div>
           <div className="header-actions">
-            <span className={`status-pill status-pill--${activeRepository?.syncStatus ?? "indexing"}`}>
+            <span
+              className={`status-pill status-pill--${activeRepository?.syncStatus ?? "indexing"}`}
+            >
               {activeRepository?.syncStatus ?? "loading"}
             </span>
             <button

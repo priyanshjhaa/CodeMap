@@ -53,7 +53,8 @@ export async function GET() {
       name: session.user.name ?? "GitHub User",
       email: session.user.email ?? "",
       role: "GitHub user",
-      avatarLabel: getAvatarLabel(session.user.name, session.user.email)
+      avatarLabel: getAvatarLabel(session.user.name, session.user.email),
+      avatarUrl: session.user.image ?? undefined
     },
     workspace: {
       ...workspace,

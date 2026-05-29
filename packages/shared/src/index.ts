@@ -93,6 +93,7 @@ export interface CurrentUser {
   email: string;
   role: string;
   avatarLabel: string;
+  avatarUrl?: string;
 }
 
 export interface WorkspaceSummary {
