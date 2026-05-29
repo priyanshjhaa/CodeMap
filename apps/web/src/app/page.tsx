@@ -231,41 +231,98 @@ export default function HomePage() {
 
       {/* Hero Section */}
       <section className="hero-section">
-        <div className="hero-glow"></div>
-        <div className="hero-aurora-layer">
-          <div className="aurora-glow aurora-glow-emerald"></div>
-          <div className="aurora-glow aurora-glow-cyan"></div>
+        <div className="hero-flow-field">
+          <div className="hero-flow-field__band hero-flow-field__band--one"></div>
+          <div className="hero-flow-field__band hero-flow-field__band--two"></div>
+          <div className="hero-flow-field__band hero-flow-field__band--three"></div>
+          <div className="hero-flow-field__band hero-flow-field__band--four"></div>
+          <div className="hero-flow-field__grain"></div>
         </div>
+        <div className="hero-atmosphere hero-atmosphere--left"></div>
+        <div className="hero-atmosphere hero-atmosphere--center"></div>
+        <div className="hero-atmosphere hero-atmosphere--right"></div>
+        <div className="hero-vignette"></div>
         <div className="hero-container">
-          <div className="hero-badge">
-            <span className="badge-dot"></span>
-            AI-Powered Code Understanding
+          <div className="hero-mark">
+            <div className="hero-mark__badge">
+              <span className="hero-mark__glyph">{`</>`}</span>
+            </div>
           </div>
           <h1 className="hero-title">
-            Chat with your <span className="hero-title-gradient">codebase</span>.
+            CodeMap
           </h1>
           <p className="hero-description">
-            Understand architecture, repository flows, and code context instantly.
-            Turn onboarding from weeks into hours.
+            The onboarding workspace that helps engineers understand repository structure,
+            architecture, and code context without the usual maze.
           </p>
           <div className="hero-cta">
-            <div className="email-input-wrapper">
-              <input
-                type="email"
-                placeholder="Enter your email"
-                className="email-input"
-              />
-              <Link href="/login" className="cta-button-primary">
-                Get Started
-              </Link>
-            </div>
+            <Link href="/login" className="cta-button-primary">
+              Start with GitHub
+            </Link>
             <Link href="/demo" className="cta-button-secondary">
               View Demo
             </Link>
           </div>
-          <div className="hero-trust">
-            <span>✓ No credit card required</span>
-            <span>✓ Setup in 2 minutes</span>
+          <div className="hero-proofline">
+            <span>Trusted by teams building complex software</span>
+          </div>
+          <div className="hero-logo-row" aria-label="Trusted teams">
+            {trustedTeams.slice(0, 5).map((team) => (
+              <div key={team.name} className="hero-logo-chip">
+                <img src={team.src} alt={team.name} />
+              </div>
+            ))}
+          </div>
+          <div className="hero-preview-frame" aria-hidden="true">
+            <div className="hero-preview-window">
+              <div className="hero-preview-window__top">
+                <div className="hero-preview-window__traffic">
+                  <span></span>
+                  <span></span>
+                  <span></span>
+                </div>
+                <div className="hero-preview-window__title">codemap/onboarding-workspace</div>
+                <div className="hero-preview-window__pill">Live context</div>
+              </div>
+              <div className="hero-preview-window__body">
+                <aside className="hero-preview-sidebar">
+                  <div className="hero-preview-sidebar__section">
+                    <span className="hero-preview-sidebar__label">Workspace</span>
+                    <strong>CodeMap</strong>
+                  </div>
+                  <div className="hero-preview-sidebar__list">
+                    <div className="hero-preview-sidebar__item hero-preview-sidebar__item--active">
+                      payments-platform
+                    </div>
+                    <div className="hero-preview-sidebar__item">identity-service</div>
+                    <div className="hero-preview-sidebar__item">developer-portal</div>
+                  </div>
+                </aside>
+                <div className="hero-preview-main">
+                  <div className="hero-preview-thread">
+                    <div className="hero-preview-thread__bubble hero-preview-thread__bubble--user">
+                      Where should a new engineer start in this repo?
+                    </div>
+                    <div className="hero-preview-thread__bubble hero-preview-thread__bubble--assistant">
+                      Start with the route layer, then follow auth and billing orchestration into
+                      the service modules.
+                    </div>
+                  </div>
+                  <div className="hero-preview-panels">
+                    <div className="hero-preview-panel">
+                      <span className="hero-preview-panel__eyebrow">Architecture</span>
+                      <strong>3 entry points mapped</strong>
+                      <p>Request flow and service boundaries surfaced for onboarding.</p>
+                    </div>
+                    <div className="hero-preview-panel">
+                      <span className="hero-preview-panel__eyebrow">Read first</span>
+                      <strong>auth.service.ts</strong>
+                      <p>Then move to billing orchestration and repository adapters.</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
