@@ -88,7 +88,6 @@ const trustedTeams = [
 
 export default function HomePage() {
   const [scrolled, setScrolled] = useState(false);
-  const [isHovered, setIsHovered] = useState(false);
   const [activeFeature, setActiveFeature] = useState('architectural');
   const [activeFlowStep, setActiveFlowStep] = useState(0);
   const [selectedPlan, setSelectedPlan] = useState(1); // 0: Free, 1: Pro, 2: Enterprise
@@ -137,17 +136,19 @@ export default function HomePage() {
           className="navbar"
           initial={false}
           animate={{
-            scale: scrolled ? 0.92 : 1,
-            y: scrolled ? 8 : 0,
-            borderRadius: scrolled ? "999px" : "0px",
+            scale: scrolled ? 0.96 : 1,
+            y: scrolled ? 6 : 0,
+            borderRadius: scrolled ? "999px" : "28px",
             backgroundColor: scrolled
-              ? "rgba(2, 6, 23, 0.85)"
-              : "transparent",
-            backdropFilter: scrolled ? "blur(25px)" : "blur(0px)",
-            border: scrolled ? "1px solid rgba(255, 255, 255, 0.12)" : "1px solid transparent",
+              ? "rgba(227, 241, 232, 0.78)"
+              : "rgba(239, 248, 242, 0.42)",
+            backdropFilter: scrolled ? "blur(28px)" : "blur(18px)",
+            border: scrolled
+              ? "1px solid rgba(18, 78, 48, 0.14)"
+              : "1px solid rgba(255, 255, 255, 0.32)",
             boxShadow: scrolled
-              ? "0 8px 32px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.15)"
-              : "none",
+              ? "0 18px 48px rgba(8, 38, 21, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.3)"
+              : "0 18px 44px rgba(15, 73, 42, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.4)",
           }}
           transition={{
             type: "spring",
@@ -155,8 +156,6 @@ export default function HomePage() {
             damping: 18,
             mass: 0.8,
           }}
-          onHoverStart={() => scrolled && setIsHovered(true)}
-          onHoverEnd={() => setIsHovered(false)}
           style={{
             transformOrigin: "top center",
           }}
@@ -168,9 +167,13 @@ export default function HomePage() {
 
           {/* Navigation links - animate opacity separately */}
           <motion.div
-            className="navbar-links"
+            className="navbar-links-shell"
             animate={{
-              gap: scrolled ? "16px" : "32px",
+              paddingLeft: scrolled ? "10px" : "14px",
+              paddingRight: scrolled ? "10px" : "14px",
+              backgroundColor: scrolled
+                ? "rgba(255, 255, 255, 0.34)"
+                : "rgba(255, 255, 255, 0.22)",
             }}
             transition={{
               type: "spring",
@@ -179,9 +182,22 @@ export default function HomePage() {
               mass: 0.8,
             }}
           >
-            <Link href="#features">Features</Link>
-            <Link href="#how-it-works">How it Works</Link>
-            <Link href="#pricing">Pricing</Link>
+            <motion.div
+              className="navbar-links"
+              animate={{
+                gap: scrolled ? "16px" : "28px",
+              }}
+              transition={{
+                type: "spring",
+                stiffness: 90,
+                damping: 18,
+                mass: 0.8,
+              }}
+            >
+              <Link href="#features">Features</Link>
+              <Link href="#how-it-works">How it Works</Link>
+              <Link href="#pricing">Pricing</Link>
+            </motion.div>
           </motion.div>
 
           {/* CTA Buttons - animate separately */}
