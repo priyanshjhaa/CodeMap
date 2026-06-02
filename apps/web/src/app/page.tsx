@@ -450,7 +450,7 @@ export default function HomePage() {
                   <h3 className="feature-title">{feature.title}</h3>
                   <p className="feature-benefit">{feature.benefit}</p>
                   <div className="feature-hover-indicator">
-                    <span>Click to explore</span>
+                    <span>Hover to preview</span>
                     <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                       <path d="M6 3L11 8L6 13" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
                     </svg>
@@ -704,19 +704,19 @@ export default function HomePage() {
                   number: 1,
                   title: "Connect Your Codebase",
                   description: "Link your GitHub repository in seconds",
-                  icon: "🔗"
+                  icon: "Link"
                 },
                 {
                   number: 2,
                   title: "AI Analysis",
                   description: "We index and understand your code structure",
-                  icon: "🤖"
+                  icon: "AI"
                 },
                 {
                   number: 3,
                   title: "Start Chatting",
                   description: "Ask questions and get instant answers",
-                  icon: "💬"
+                  icon: "Chat"
                 }
               ].map((step, index) => (
                 <div
@@ -787,21 +787,21 @@ export default function HomePage() {
                   </div>
                   <div className="analysis-stats">
                     <div className="stat-item">
-                      <div className="stat-icon">📁</div>
+                      <div className="stat-icon" aria-hidden="true">01</div>
                       <div className="stat-content">
                         <div className="stat-label">Files scanned</div>
                         <div className="stat-value">2,847</div>
                       </div>
                     </div>
                     <div className="stat-item">
-                      <div className="stat-icon">📝</div>
+                      <div className="stat-icon" aria-hidden="true">02</div>
                       <div className="stat-content">
                         <div className="stat-label">Functions found</div>
                         <div className="stat-value">1,234</div>
                       </div>
                     </div>
                     <div className="stat-item">
-                      <div className="stat-icon">🔗</div>
+                      <div className="stat-icon" aria-hidden="true">03</div>
                       <div className="stat-content">
                         <div className="stat-label">Dependencies</div>
                         <div className="stat-value">456</div>
@@ -820,11 +820,11 @@ export default function HomePage() {
                 </div>
                 <div className="chat-preview-flow">
                   <div className="chat-message-flow user">
-                    <span className="chat-avatar-flow">👤</span>
+                    <span className="chat-avatar-flow" aria-hidden="true">U</span>
                     <div className="chat-bubble-flow">Where is authentication handled?</div>
                   </div>
                   <div className="chat-message-flow assistant">
-                    <span className="chat-avatar-flow">🤖</span>
+                    <span className="chat-avatar-flow" aria-hidden="true">AI</span>
                     <div className="chat-bubble-flow">
                       Found in <code>middleware/auth.js</code>
                       <div className="chat-citation-flow">
@@ -1050,7 +1050,7 @@ export default function HomePage() {
                 </div>
                 <div className="enterprise-preview">
                   <div className="enterprise-highlight">
-                    <div className="enterprise-highlight-icon">🏢</div>
+                    <div className="enterprise-highlight-icon" aria-hidden="true">HQ</div>
                     <div className="enterprise-highlight-text">
                       <div className="enterprise-highlight-title">Everything in Pro, plus:</div>
                       <div className="enterprise-highlight-sub">Enterprise-grade security & governance</div>
@@ -1058,28 +1058,28 @@ export default function HomePage() {
                   </div>
                   <div className="enterprise-features-list">
                     <div className="enterprise-feature">
-                      <div className="enterprise-feature-icon">🔐</div>
+                      <div className="enterprise-feature-icon" aria-hidden="true">SSO</div>
                       <div className="enterprise-feature-content">
                         <div className="enterprise-feature-title">SSO & SAML</div>
                         <div className="enterprise-feature-desc">Single sign-on with your identity provider</div>
                       </div>
                     </div>
                     <div className="enterprise-feature">
-                      <div className="enterprise-feature-icon">🎛️</div>
+                      <div className="enterprise-feature-icon" aria-hidden="true">ACL</div>
                       <div className="enterprise-feature-content">
                         <div className="enterprise-feature-title">Workspace Governance</div>
                         <div className="enterprise-feature-desc">Advanced access controls and permissions</div>
                       </div>
                     </div>
                     <div className="enterprise-feature">
-                      <div className="enterprise-feature-icon">💬</div>
+                      <div className="enterprise-feature-icon" aria-hidden="true">24</div>
                       <div className="enterprise-feature-content">
                         <div className="enterprise-feature-title">Dedicated Support</div>
                         <div className="enterprise-feature-desc">Priority access to our engineering team</div>
                       </div>
                     </div>
                     <div className="enterprise-feature">
-                      <div className="enterprise-feature-icon">📊</div>
+                      <div className="enterprise-feature-icon" aria-hidden="true">SLA</div>
                       <div className="enterprise-feature-content">
                         <div className="enterprise-feature-title">SLA Guarantee</div>
                         <div className="enterprise-feature-desc">99.99% uptime commitment</div>

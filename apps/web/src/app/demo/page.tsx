@@ -11,7 +11,7 @@ export default function DemoPage() {
           <Link href="/" className="demo-logo">
             CodeMap
           </Link>
-          <Link href="/login" className="demo-back-button">
+          <Link href="/" className="demo-back-button">
             ← Back to Home
           </Link>
         </div>

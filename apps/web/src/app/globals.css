@@ -1169,3 +1169,199 @@ section, main, .page-container {
 html {
   scroll-behavior: smooth;
 }
+
+/* Final product-surface polish */
+.app-background {
+  background:
+    radial-gradient(circle at 18% -10%, rgba(64, 217, 133, 0.13), transparent 34%),
+    radial-gradient(circle at 92% 8%, rgba(56, 189, 248, 0.09), transparent 30%),
+    linear-gradient(135deg, #060806 0%, #0d1410 46%, #050607 100%);
+}
+
+.card,
+.subtle-card,
+.proof-card,
+.step-item,
+.repo-card,
+.thread-item,
+.repo-switch,
+.nav-link,
+.citation-item,
+.sync-item {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.025)),
+    rgba(12, 16, 14, 0.78);
+  border-color: rgba(255, 255, 255, 0.105);
+  box-shadow:
+    0 20px 60px rgba(0, 0, 0, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.app-shell {
+  gap: 18px;
+  padding: 18px 0 28px;
+}
+
+.app-sidebar {
+  position: sticky;
+  top: 18px;
+  max-height: calc(100vh - 36px);
+  overflow: auto;
+  border-radius: 22px;
+}
+
+.sidebar-brand h2,
+.app-header h1,
+.dashboard-hero-card h2 {
+  text-wrap: balance;
+}
+
+.sidebar-brand p:last-child,
+.app-header__copy p:last-child,
+.dashboard-hero-card p,
+.dashboard-next-card p,
+.dashboard-path-card p,
+.dashboard-note-card p {
+  text-wrap: pretty;
+}
+
+.nav-link,
+.repo-switch,
+.thread-item {
+  transition: transform 160ms ease, border-color 160ms ease, background 160ms ease, color 160ms ease;
+}
+
+.nav-link--active,
+.repo-switch--active,
+.thread-item--active,
+.step-item--current {
+  border-color: rgba(52, 211, 153, 0.45);
+  background:
+    linear-gradient(180deg, rgba(16, 185, 129, 0.18), rgba(16, 185, 129, 0.08)),
+    rgba(8, 20, 13, 0.8);
+  box-shadow:
+    0 0 0 1px rgba(16, 185, 129, 0.16),
+    0 18px 48px rgba(0, 0, 0, 0.24);
+}
+
+.app-header {
+  align-items: center;
+  border-radius: 22px;
+}
+
+.header-actions {
+  justify-content: flex-end;
+}
+
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 34px;
+}
+
+.status-pill::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: currentColor;
+  box-shadow: 0 0 18px currentColor;
+}
+
+.dashboard-focus {
+  grid-template-columns: minmax(0, 1.35fr) minmax(280px, 0.9fr);
+}
+
+.dashboard-hero-card,
+.dashboard-next-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.dashboard-hero-card::before,
+.dashboard-next-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.028) 1px, transparent 1px);
+  background-size: 38px 38px;
+  mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.44), transparent 74%);
+}
+
+.dashboard-hero-card > *,
+.dashboard-next-card > * {
+  position: relative;
+  z-index: 1;
+}
+
+.dashboard-checklist__item,
+.dashboard-facts div,
+.stats-grid div {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.018)),
+    rgba(2, 6, 5, 0.38);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.dashboard-path-card {
+  min-height: 172px;
+}
+
+.dashboard-path-card:hover {
+  border-color: rgba(52, 211, 153, 0.26);
+  background:
+    linear-gradient(180deg, rgba(16, 185, 129, 0.09), rgba(255, 255, 255, 0.025)),
+    rgba(12, 16, 14, 0.84);
+}
+
+.button {
+  background: linear-gradient(135deg, #20c878 0%, #0f9f60 100%);
+  color: #04100a;
+  box-shadow:
+    0 14px 32px rgba(16, 185, 129, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.22);
+}
+
+.button--secondary,
+.starter-chip,
+.step-pill {
+  color: rgba(209, 250, 229, 0.92);
+  background: rgba(255, 255, 255, 0.055);
+}
+
+.chat-form textarea,
+.diagram-block,
+.citation-item pre {
+  border-color: rgba(255, 255, 255, 0.11);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+@media (max-width: 980px) {
+  .app-sidebar {
+    position: static;
+    max-height: none;
+  }
+}
+
+@media (max-width: 720px) {
+  .app-shell {
+    padding-top: 12px;
+  }
+
+  .header-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .header-actions .button {
+    width: 100%;
+  }
+
+  .dashboard-facts {
+    grid-template-columns: 1fr;
+  }
+}
