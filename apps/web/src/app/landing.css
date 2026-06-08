@@ -5472,6 +5472,13 @@
   text-shadow: 0 18px 54px rgba(0, 0, 0, 0.28);
 }
 
+.feature-card-interactive:focus-visible,
+.flow-step:focus-visible,
+.plan-card:focus-visible {
+  outline: 2px solid rgba(94, 234, 212, 0.9);
+  outline-offset: 4px;
+}
+
 @media (max-width: 960px) {
   .hero-section {
     min-height: auto;

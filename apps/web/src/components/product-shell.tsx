@@ -3,7 +3,6 @@
 import Link from "next/link";
 import type { Route } from "next";
 import { usePathname } from "next/navigation";
-import { useDeferredValue } from "react";
 import { useProduct } from "./product-provider";
 import { signOutFromCodeMap } from "../lib/actions";
 
@@ -29,7 +28,6 @@ export function ProductShell({ children }: { children: React.ReactNode }) {
     setActiveRepo,
     triggerSync
   } = useProduct();
-  const deferredRepoId = useDeferredValue(activeRepoId);
 
   return (
     <div className="app-shell">
@@ -62,7 +60,7 @@ export function ProductShell({ children }: { children: React.ReactNode }) {
               repositories.map((repository) => (
                 <button
                   key={repository.id}
-                  className={`repo-switch ${deferredRepoId === repository.id ? "repo-switch--active" : ""}`}
+                  className={`repo-switch ${activeRepoId === repository.id ? "repo-switch--active" : ""}`}
                   type="button"
                   onClick={() => setActiveRepo(repository.id)}
                 >

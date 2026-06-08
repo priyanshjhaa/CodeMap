@@ -7,5 +7,5 @@ export async function signInWithGitHub() {
 }
 
 export async function signOutFromCodeMap() {
-  await signOut({ redirectTo: "/login" });
+  await signOut({ redirectTo: "/" });
 }

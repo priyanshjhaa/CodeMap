@@ -444,6 +444,17 @@ export default function HomePage() {
                   key={feature.id}
                   className={`feature-card-interactive ${activeFeature === feature.id ? 'active' : ''}`}
                   onMouseEnter={() => setActiveFeature(feature.id)}
+                  onFocus={() => setActiveFeature(feature.id)}
+                  onClick={() => setActiveFeature(feature.id)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.preventDefault();
+                      setActiveFeature(feature.id);
+                    }
+                  }}
+                  role="button"
+                  tabIndex={0}
+                  aria-pressed={activeFeature === feature.id}
                   style={{ animationDelay: `${index * 0.1}s` }}
                 >
                   <div className="feature-icon">{feature.icon}</div>
@@ -723,6 +734,17 @@ export default function HomePage() {
                   key={step.number}
                   className={`flow-step ${activeFlowStep === index ? 'active' : ''}`}
                   onMouseEnter={() => setActiveFlowStep(index)}
+                  onFocus={() => setActiveFlowStep(index)}
+                  onClick={() => setActiveFlowStep(index)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.preventDefault();
+                      setActiveFlowStep(index);
+                    }
+                  }}
+                  role="button"
+                  tabIndex={0}
+                  aria-pressed={activeFlowStep === index}
                 >
                   <div className="flow-step-circle">
                     <span className="flow-step-number">{step.number}</span>
@@ -889,6 +911,16 @@ export default function HomePage() {
                   key={plan.id}
                   className={`plan-card ${selectedPlan === plan.id ? 'active' : ''} ${plan.popular ? 'popular' : ''}`}
                   onClick={() => setSelectedPlan(plan.id)}
+                  onFocus={() => setSelectedPlan(plan.id)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.preventDefault();
+                      setSelectedPlan(plan.id);
+                    }
+                  }}
+                  role="button"
+                  tabIndex={0}
+                  aria-pressed={selectedPlan === plan.id}
                 >
                   {plan.popular && <div className="popular-ribbon">Most Popular</div>}
                   <div className="plan-icon">{plan.icon}</div>
@@ -1163,7 +1195,7 @@ export default function HomePage() {
       {/* Footer */}
       <footer className="landing-footer">
         <div className="footer-bottom">
-          <p>&copy; 2024 CodeMap. All rights reserved.</p>
+          <p>&copy; {new Date().getFullYear()} CodeMap. All rights reserved.</p>
         </div>
       </footer>
     </main>
