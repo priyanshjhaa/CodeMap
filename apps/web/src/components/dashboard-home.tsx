@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import type { Route } from "next";
+import type { CSSProperties } from "react";
 import { useProduct } from "./product-provider";
 import { formatDateLabel } from "../lib/format";
 
@@ -22,6 +23,7 @@ export function DashboardHome() {
     syncProgress?.state === "empty"
       ? "Start the first indexing pass so the product can build repository context."
       : "Ask onboarding questions once the repository context looks good.";
+  const progress = syncProgress?.percentComplete ?? 0;
 
   if (!repositories.length) {
     return (
@@ -37,30 +39,13 @@ export function DashboardHome() {
   }
 
   return (
-    <div className="content-stack">
-      <section className="dashboard-focus">
-        <article className="card dashboard-hero-card">
-          <p className="eyebrow">Start here</p>
-          <h2>{activeRepository?.name ?? "Choose a repository"}</h2>
-          <p>
-            {activeRepository?.description ??
-              "Repository metadata will appear here once the overview endpoint is available."}
-          </p>
-          <div className="dashboard-checklist">
-            <div className="dashboard-checklist__item">
-              <span>Repository</span>
-              <strong>{repoName}</strong>
-            </div>
-            <div className="dashboard-checklist__item">
-              <span>Sync status</span>
-              <strong>{syncProgress?.stageLabel ?? "Waiting to start"}</strong>
-            </div>
-            <div className="dashboard-checklist__item">
-              <span>Next step</span>
-              <strong>{syncSummary}</strong>
-            </div>
-          </div>
-          <div className="button-row dashboard-hero-actions">
+    <div className="dashboard-overview">
+      <section className="dashboard-command">
+        <div className="dashboard-command__copy">
+          <p className="eyebrow">Continue onboarding</p>
+          <h2>{nextActionLabel}</h2>
+          <p>{nextActionBody}</p>
+          <div className="button-row">
             <Link className="button" href={nextActionHref}>
               {nextActionLabel}
             </Link>
@@ -68,77 +53,99 @@ export function DashboardHome() {
               View architecture
             </Link>
           </div>
-        </article>
-
-        <article className="card dashboard-next-card">
-          <p className="eyebrow">What to do now</p>
-          <h3>{nextActionLabel}</h3>
-          <p>{nextActionBody}</p>
-          <div className="meter">
-            <span style={{ width: `${syncProgress?.percentComplete ?? 0}%` }} />
+        </div>
+        <div className="dashboard-command__progress">
+          <div className="progress-orbit" style={{ "--progress": `${progress * 3.6}deg` } as CSSProperties}>
+            <div>
+              <strong>{progress}%</strong>
+              <span>indexed</span>
+            </div>
           </div>
-          <span className="dashboard-supporting-copy">{architectureReady}</span>
-        </article>
+          <p>{syncProgress?.stageLabel ?? "Waiting to start"}</p>
+          <span>{syncSummary}</span>
+        </div>
       </section>
 
-      <section className="dashboard-paths">
-        <Link className="card dashboard-path-card" href={"/dashboard/chat" as Route}>
-          <p className="eyebrow">Ask questions</p>
-          <h3>Repository chat</h3>
-          <p>Use natural questions to understand modules, ownership, and file locations.</p>
-        </Link>
-
-        <Link className="card dashboard-path-card" href={"/dashboard/architecture" as Route}>
-          <p className="eyebrow">See the shape</p>
-          <h3>Architecture view</h3>
-          <p>
-            {architecture?.summary ??
-              "Open a calmer summary of entry points, major flows, and reading paths."}
-          </p>
-        </Link>
-
-        <Link className="card dashboard-path-card" href={"/dashboard/syncs" as Route}>
-          <p className="eyebrow">Track readiness</p>
-          <h3>Sync progress</h3>
-          <p>Check whether repository context is ready before deeper onboarding work begins.</p>
-        </Link>
+      <section className="dashboard-signal-strip" aria-label="Repository signals">
+        <div>
+          <span>Repository</span>
+          <strong>{repoName}</strong>
+        </div>
+        <div>
+          <span>Architecture</span>
+          <strong>{architectureReady.replace(".", "")}</strong>
+        </div>
+        <div>
+          <span>Branch</span>
+          <strong>{activeRepository?.defaultBranch ?? "Not available"}</strong>
+        </div>
+        <div>
+          <span>Last indexed</span>
+          <strong>
+            {activeRepository?.lastIndexedAt
+              ? formatDateLabel(activeRepository.lastIndexedAt)
+              : "Not indexed yet"}
+          </strong>
+        </div>
       </section>
 
-      <section className="dashboard-notes">
-        <article className="card dashboard-note-card">
-          <p className="eyebrow">Recommended reads</p>
-          <ul className="bullet-list">
+      <section className="dashboard-workspace-grid">
+        <article className="dashboard-panel dashboard-panel--reads">
+          <div className="dashboard-panel__heading">
+            <div>
+              <p className="eyebrow">Recommended reads</p>
+              <h3>Start with the highest-signal files</h3>
+            </div>
+            <Link className="text-link" href={"/dashboard/architecture" as Route}>
+              Open map
+            </Link>
+          </div>
+          <ol className="dashboard-read-list">
             {architecture?.recommendedReads?.length ? (
-              architecture.recommendedReads.slice(0, 4).map((item) => <li key={item}>{item}</li>)
+              architecture.recommendedReads.slice(0, 4).map((item, index) => (
+                <li key={item}>
+                  <span>{String(index + 1).padStart(2, "0")}</span>
+                  <strong>{item}</strong>
+                </li>
+              ))
             ) : (
-              <li>Reading suggestions will appear after architecture analysis completes.</li>
+              <li>
+                <span>01</span>
+                <strong>Reading suggestions appear after architecture analysis.</strong>
+              </li>
             )}
-          </ul>
+          </ol>
         </article>
 
-        <article className="card dashboard-note-card">
-          <p className="eyebrow">Quick context</p>
-          <div className="dashboard-facts">
+        <article className="dashboard-panel dashboard-panel--actions">
+          <div className="dashboard-panel__heading">
             <div>
-              <span>Branch</span>
-              <strong>{activeRepository?.defaultBranch ?? "Not available"}</strong>
+              <p className="eyebrow">Explore repository</p>
+              <h3>Choose a workspace</h3>
             </div>
-            <div>
-              <span>Visibility</span>
-              <strong>{activeRepository?.visibility ?? "Not available"}</strong>
-            </div>
-            <div>
-              <span>Last indexed</span>
-              <strong>
-                {activeRepository?.lastIndexedAt
-                  ? formatDateLabel(activeRepository.lastIndexedAt)
-                  : "Not indexed yet"}
-              </strong>
-            </div>
-            <div>
-              <span>Connected repos</span>
-              <strong>{repositories.length}</strong>
-            </div>
+          </div>
+          <div className="dashboard-action-list">
+            <Link href={"/dashboard/chat" as Route}>
+              <span>01</span>
+              <div>
+                <strong>Repository chat</strong>
+                <p>Ask about modules, ownership, and flows.</p>
+              </div>
+            </Link>
+            <Link href={"/dashboard/architecture" as Route}>
+              <span>02</span>
+              <div>
+                <strong>Architecture map</strong>
+                <p>See entry points and system boundaries.</p>
+              </div>
+            </Link>
+            <Link href={"/dashboard/syncs" as Route}>
+              <span>03</span>
+              <div>
+                <strong>Sync activity</strong>
+                <p>Review indexing health and recent runs.</p>
+              </div>
+            </Link>
           </div>
         </article>
       </section>

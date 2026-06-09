@@ -5067,8 +5067,127 @@
   padding-top: 104px;
   padding-bottom: 34px;
   background:
-    linear-gradient(180deg, rgba(247, 255, 249, 0.96) 0%, rgba(210, 240, 222, 0.76) 24%, rgba(40, 112, 68, 0.54) 52%, rgba(5, 15, 9, 0.94) 76%, #030604 100%),
+    linear-gradient(180deg, rgba(247, 255, 249, 0.96) 0%, rgba(210, 240, 222, 0.76) 24%, rgba(40, 112, 68, 0.5) 51%, rgba(5, 15, 9, 0.96) 62%, #030604 74%, #020403 100%),
     linear-gradient(135deg, #f4fff7 0%, #a7d7b7 30%, #1d6e42 62%, #050c08 100%);
+}
+
+.hero-vignette {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0) 18%, rgba(3, 10, 6, 0) 51%, rgba(2, 8, 5, 0.78) 59%, rgba(2, 8, 5, 0.98) 68%, #020403 100%),
+    radial-gradient(circle at 50% 26%, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0) 38%);
+}
+
+.hero-flow-field__grain {
+  opacity: 0.3;
+  mask-image: linear-gradient(180deg, transparent 44%, rgba(0, 0, 0, 0.45) 53%, #000 62%);
+}
+
+.hero-flow-boundary {
+  position: absolute;
+  z-index: 1;
+  top: 51%;
+  left: -8%;
+  width: 116%;
+  height: 190px;
+  pointer-events: none;
+  overflow: hidden;
+  filter: saturate(1.08);
+}
+
+.hero-flow-boundary__ribbon,
+.hero-flow-boundary__edge {
+  position: absolute;
+  left: -5%;
+  width: 110%;
+  will-change: transform;
+}
+
+.hero-flow-boundary__ribbon--back {
+  top: 4px;
+  height: 152px;
+  background: linear-gradient(180deg, rgba(64, 170, 103, 0.42), rgba(16, 76, 39, 0.2) 52%, rgba(2, 8, 5, 0) 100%);
+  clip-path: polygon(0 34%, 8% 20%, 18% 30%, 29% 12%, 41% 29%, 54% 16%, 67% 32%, 79% 14%, 90% 27%, 100% 18%, 100% 100%, 0 100%);
+  filter: blur(28px);
+  transform: rotate(-1.5deg) scaleX(1.04);
+  animation: heroBoundaryBack 18s ease-in-out infinite alternate;
+}
+
+.hero-flow-boundary__ribbon--mid {
+  top: 24px;
+  height: 142px;
+  background:
+    radial-gradient(ellipse at 20% 0%, rgba(74, 190, 116, 0.54), transparent 45%),
+    radial-gradient(ellipse at 76% 8%, rgba(24, 126, 65, 0.48), transparent 48%),
+    linear-gradient(180deg, rgba(25, 111, 58, 0.38), rgba(2, 8, 5, 0) 84%);
+  clip-path: polygon(0 22%, 10% 34%, 22% 18%, 34% 38%, 46% 21%, 58% 34%, 71% 17%, 83% 36%, 93% 22%, 100% 31%, 100% 100%, 0 100%);
+  filter: blur(22px);
+  transform: rotate(1.2deg);
+  animation: heroBoundaryMid 22s ease-in-out infinite alternate;
+}
+
+.hero-flow-boundary__ribbon--front {
+  top: 48px;
+  height: 136px;
+  background: linear-gradient(180deg, rgba(8, 47, 24, 0.72), rgba(2, 8, 5, 0.96) 64%, #020403 100%);
+  clip-path: polygon(0 28%, 11% 16%, 24% 35%, 37% 20%, 49% 39%, 62% 22%, 75% 34%, 87% 17%, 100% 30%, 100% 100%, 0 100%);
+  filter: blur(18px);
+  transform: rotate(-0.8deg) scaleX(1.05);
+  animation: heroBoundaryFront 20s ease-in-out infinite alternate;
+}
+
+.hero-flow-boundary__edge {
+  top: 48px;
+  height: 32px;
+  background: linear-gradient(90deg, transparent 0%, rgba(134, 239, 172, 0.18) 18%, rgba(74, 222, 128, 0.26) 48%, rgba(110, 231, 183, 0.12) 78%, transparent 100%);
+  clip-path: polygon(0 52%, 12% 28%, 25% 62%, 38% 34%, 50% 70%, 63% 36%, 76% 64%, 88% 30%, 100% 54%, 100% 100%, 0 100%);
+  filter: blur(16px);
+  opacity: 0.8;
+  animation: heroBoundaryEdge 16s ease-in-out infinite alternate;
+}
+
+@keyframes heroBoundaryBack {
+  0% {
+    transform: translate3d(-2%, -5px, 0) rotate(-1.5deg) scaleX(1.04);
+  }
+  100% {
+    transform: translate3d(3%, 7px, 0) rotate(1deg) scaleX(1.08);
+  }
+}
+
+@keyframes heroBoundaryMid {
+  0% {
+    transform: translate3d(2%, 3px, 0) rotate(1.2deg) scaleX(1.04);
+  }
+  100% {
+    transform: translate3d(-3%, -7px, 0) rotate(-1.4deg) scaleX(1.08);
+  }
+}
+
+@keyframes heroBoundaryFront {
+  0% {
+    transform: translate3d(-1%, 4px, 0) rotate(-0.8deg) scaleX(1.05);
+  }
+  100% {
+    transform: translate3d(2%, -5px, 0) rotate(0.9deg) scaleX(1.08);
+  }
+}
+
+@keyframes heroBoundaryEdge {
+  0% {
+    transform: translate3d(-2%, 0, 0) rotate(-0.6deg);
+    opacity: 0.62;
+  }
+  100% {
+    transform: translate3d(2%, 5px, 0) rotate(0.8deg);
+    opacity: 0.9;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-flow-boundary__ribbon,
+  .hero-flow-boundary__edge {
+    animation: none;
+  }
 }
 
 .hero-container {
@@ -5112,9 +5231,13 @@
   min-width: 104px;
   min-height: 34px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.18);
-  border: 1px solid rgba(255, 255, 255, 0.24);
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.14);
   backdrop-filter: blur(14px);
+}
+
+.hero-logo-chip img {
+  filter: invert(1) grayscale(1) brightness(1.45) opacity(0.68);
 }
 
 .hero-preview-frame {

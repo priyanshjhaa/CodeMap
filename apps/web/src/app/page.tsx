@@ -258,6 +258,12 @@ export default function HomePage() {
         <div className="hero-atmosphere hero-atmosphere--center"></div>
         <div className="hero-atmosphere hero-atmosphere--right"></div>
         <div className="hero-vignette"></div>
+        <div className="hero-flow-boundary" aria-hidden="true">
+          <span className="hero-flow-boundary__ribbon hero-flow-boundary__ribbon--back"></span>
+          <span className="hero-flow-boundary__ribbon hero-flow-boundary__ribbon--mid"></span>
+          <span className="hero-flow-boundary__ribbon hero-flow-boundary__ribbon--front"></span>
+          <span className="hero-flow-boundary__edge"></span>
+        </div>
         <div className="hero-container">
           <div className="hero-mark">
             <div className="hero-mark__badge">

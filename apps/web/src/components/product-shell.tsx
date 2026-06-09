@@ -7,10 +7,10 @@ import { useProduct } from "./product-provider";
 import { signOutFromCodeMap } from "../lib/actions";
 
 const navItems = [
-  { href: "/dashboard" as Route, label: "Dashboard" },
-  { href: "/dashboard/chat" as Route, label: "Chat" },
-  { href: "/dashboard/architecture" as Route, label: "Architecture" },
-  { href: "/dashboard/syncs" as Route, label: "Syncs" }
+  { href: "/dashboard" as Route, label: "Overview", marker: "01" },
+  { href: "/dashboard/chat" as Route, label: "Chat", marker: "02" },
+  { href: "/dashboard/architecture" as Route, label: "Architecture", marker: "03" },
+  { href: "/dashboard/syncs" as Route, label: "Syncs", marker: "04" }
 ];
 
 export function ProductShell({ children }: { children: React.ReactNode }) {
@@ -31,23 +31,29 @@ export function ProductShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="app-shell">
-      <aside className="app-sidebar card">
+      <aside className="app-sidebar">
         <div className="sidebar-brand">
-          <p className="eyebrow">CodeMap</p>
-          <h2>{workspace?.name ?? "Loading workspace"}</h2>
+          <Link href="/" className="sidebar-brand__mark" aria-label="CodeMap home">
+            <span>{`</>`}</span>
+          </Link>
+          <div>
+            <p className="eyebrow">CodeMap</p>
+            <h2>{workspace?.name ?? "Loading workspace"}</h2>
+          </div>
           <p>
             {workspace
-              ? `${workspace.teamSize} teammates using repository onboarding`
+              ? `${workspace.teamSize} teammates`
               : "Setting up your workspace view"}
           </p>
         </div>
 
-        <nav className="sidebar-nav">
+        <nav className="sidebar-nav" aria-label="Product navigation">
           {navItems.map((item) => {
             const active = pathname === item.href;
             return (
               <Link key={item.href} className={`nav-link ${active ? "nav-link--active" : ""}`} href={item.href}>
-                {item.label}
+                <span className="nav-link__marker">{item.marker}</span>
+                <span>{item.label}</span>
               </Link>
             );
           })}
@@ -64,8 +70,11 @@ export function ProductShell({ children }: { children: React.ReactNode }) {
                   type="button"
                   onClick={() => setActiveRepo(repository.id)}
                 >
-                  <strong>{repository.name}</strong>
-                  <span>{repository.health.replace("_", " ")}</span>
+                  <span className="repo-switch__dot" aria-hidden="true" />
+                  <span className="repo-switch__copy">
+                    <strong>{repository.name}</strong>
+                    <span>{repository.health.replace("_", " ")}</span>
+                  </span>
                 </button>
               ))
             ) : (
@@ -96,9 +105,11 @@ export function ProductShell({ children }: { children: React.ReactNode }) {
       </aside>
 
       <div className="app-main">
-        <header className="app-header card">
+        <header className="app-header">
           <div className="app-header__copy">
-            <p className="eyebrow">Current repository</p>
+            <p className="app-breadcrumb">
+              {workspace?.name ?? "Workspace"} <span>/</span> Current repository
+            </p>
             <h1>
               {activeRepository
                 ? `${activeRepository.owner}/${activeRepository.name}`
