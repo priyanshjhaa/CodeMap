@@ -309,8 +309,19 @@ export default function HomePage() {
               <div className="hero-preview-window__body">
                 <aside className="hero-preview-sidebar">
                   <div className="hero-preview-sidebar__section">
-                    <span className="hero-preview-sidebar__label">Workspace</span>
-                    <strong>CodeMap</strong>
+                    <span className="hero-preview-sidebar__mark">{`</>`}</span>
+                    <div>
+                      <span className="hero-preview-sidebar__label">Workspace</span>
+                      <strong>CodeMap</strong>
+                    </div>
+                  </div>
+                  <div className="hero-preview-sidebar__nav">
+                    <div className="hero-preview-sidebar__nav-item hero-preview-sidebar__nav-item--active">
+                      <span>01</span> Overview
+                    </div>
+                    <div className="hero-preview-sidebar__nav-item"><span>02</span> Chat</div>
+                    <div className="hero-preview-sidebar__nav-item"><span>03</span> Architecture</div>
+                    <div className="hero-preview-sidebar__nav-item"><span>04</span> Syncs</div>
                   </div>
                   <div className="hero-preview-sidebar__list">
                     <div className="hero-preview-sidebar__item hero-preview-sidebar__item--active">
@@ -321,26 +332,35 @@ export default function HomePage() {
                   </div>
                 </aside>
                 <div className="hero-preview-main">
-                  <div className="hero-preview-thread">
-                    <div className="hero-preview-thread__bubble hero-preview-thread__bubble--user">
-                      Where should a new engineer start in this repo?
+                  <div className="hero-preview-repo-header">
+                    <div>
+                      <span>Acme engineering / Current repository</span>
+                      <strong>acme/payments-platform</strong>
                     </div>
-                    <div className="hero-preview-thread__bubble hero-preview-thread__bubble--assistant">
-                      Start with the route layer, then follow auth and billing orchestration into
-                      the service modules.
+                    <div className="hero-preview-repo-actions">
+                      <span>Ready</span>
+                      <strong>Re-sync</strong>
                     </div>
                   </div>
-                  <div className="hero-preview-panels">
-                    <div className="hero-preview-panel">
-                      <span className="hero-preview-panel__eyebrow">Architecture</span>
-                      <strong>3 entry points mapped</strong>
-                      <p>Request flow and service boundaries surfaced for onboarding.</p>
+                  <div className="hero-preview-command">
+                    <div className="hero-preview-command__copy">
+                      <span>Continue onboarding</span>
+                      <strong>Open repository chat</strong>
+                      <p>Ask onboarding questions once the repository context looks good.</p>
+                      <div>
+                        <b>Open chat</b>
+                        <em>View architecture</em>
+                      </div>
                     </div>
-                    <div className="hero-preview-panel">
-                      <span className="hero-preview-panel__eyebrow">Read first</span>
-                      <strong>auth.service.ts</strong>
-                      <p>Then move to billing orchestration and repository adapters.</p>
+                    <div className="hero-preview-command__orbit">
+                      <div><strong>87%</strong><span>indexed</span></div>
                     </div>
+                  </div>
+                  <div className="hero-preview-signals">
+                    <div><span>Architecture</span><strong>Map ready</strong></div>
+                    <div><span>Branch</span><strong>main</strong></div>
+                    <div><span>Entry points</span><strong>3 mapped</strong></div>
+                    <div><span>Last indexed</span><strong>12m ago</strong></div>
                   </div>
                 </div>
               </div>
