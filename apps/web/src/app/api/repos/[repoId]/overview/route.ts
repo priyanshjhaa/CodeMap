@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { buildRepositoryDetail, getGitHubRepositories } from "../../../../../lib/github";
+import { BackendProxyError, proxyJson } from "../../../../../lib/backend";
 
 export async function GET(
   _request: Request,
@@ -7,18 +7,9 @@ export async function GET(
 ) {
   try {
     const { repoId } = await context.params;
-    const repositories = await getGitHubRepositories();
-    const repository = repositories.find((item) => String(item.id) === repoId);
-
-    if (!repository) {
-      return NextResponse.json({ message: "Repository not found" }, { status: 404 });
-    }
-
-    return NextResponse.json(buildRepositoryDetail(repository));
+    return await proxyJson(`/repos/${repoId}/overview`);
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "Failed to load repository overview.";
-    const status = message === "Unauthorized" ? 401 : 500;
-    return NextResponse.json({ message }, { status });
+    const status = error instanceof BackendProxyError ? error.status : 500;
+    return NextResponse.json({ message: error instanceof Error ? error.message : "Failed to load repository overview" }, { status });
   }
 }

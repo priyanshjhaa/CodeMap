@@ -10,14 +10,26 @@ CodeMap is a hosted onboarding assistant for engineering teams. This repository 
 
 ## Quick start
 
-1. Copy `.env.example` to `.env`.
+1. Copy `apps/api/.env.example` to `apps/api/.env` and `apps/web/.env.example` to `apps/web/.env`.
 2. Install workspace dependencies with `npm install`.
 3. Start infrastructure from `infra/docker/docker-compose.yml`.
-4. Run `npm run dev:api` and `npm run dev:web`.
+4. Generate Prisma and apply migrations:
 
-## Frontend development
+```bash
+npm --workspace @codemap/api run prisma:generate
+npm --workspace @codemap/api run prisma:migrate
+```
 
-The Phase 1 frontend is intentionally mock-driven while the backend is prepared.
+For deployment, use `npm --workspace @codemap/api run prisma:deploy` instead.
+
+5. Run `npm run dev:api` and `npm run dev:web`.
+
+## Authentication and API setup
+
+- NextAuth owns the browser GitHub OAuth session and forwards the OAuth callback to Nest.
+- Nest persists users, backend OAuth sessions, workspaces, memberships, encrypted GitHub connections, and connected repositories in PostgreSQL.
+- `API_INTERNAL_SECRET` must match in both apps. It protects the authenticated Next.js-to-Nest proxy headers.
+- Set `NEXT_PUBLIC_DEMO_MODE=true` only when intentionally running the client against its demo fallback.
 
 Run the web app locally:
 

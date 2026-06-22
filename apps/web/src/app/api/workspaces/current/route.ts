@@ -1,8 +1,6 @@
-import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { auth } from "../../../../lib/auth";
-
-const WORKSPACE_COOKIE = "codemap-workspace";
+import { BackendProxyError, backendRequest } from "../../../../lib/backend";
 
 type WorkspaceCookie = {
   id: string;
@@ -18,16 +16,6 @@ function getAvatarLabel(name?: string | null, email?: string | null) {
   return initials || "CM";
 }
 
-function defaultWorkspace(name?: string | null): WorkspaceCookie {
-  const workspaceName = name ? `${name.split(" ")[0]}'s Workspace` : "My Workspace";
-  return {
-    id: "workspace_current",
-    name: workspaceName,
-    slug: workspaceName.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
-    teamSize: 1
-  };
-}
-
 export async function GET() {
   const session = await auth();
 
@@ -35,16 +23,17 @@ export async function GET() {
     return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
   }
 
-  const cookieStore = await cookies();
-  const rawWorkspace = cookieStore.get(WORKSPACE_COOKIE)?.value;
-
-  let workspace = defaultWorkspace(session.user.name);
-  if (rawWorkspace) {
-    try {
-      workspace = JSON.parse(rawWorkspace) as WorkspaceCookie;
-    } catch {
-      workspace = defaultWorkspace(session.user.name);
+  let workspace: WorkspaceCookie;
+  try {
+    const response = await backendRequest("/workspaces/current");
+    if (!response.ok) {
+      const payload = await response.json().catch(() => ({ message: "Could not load workspace" })) as { message?: string };
+      return NextResponse.json({ message: payload.message ?? "Could not load workspace" }, { status: response.status });
     }
+    workspace = await response.json() as WorkspaceCookie;
+  } catch (error) {
+    const status = error instanceof BackendProxyError ? error.status : 500;
+    return NextResponse.json({ message: error instanceof Error ? error.message : "Could not load workspace" }, { status });
   }
 
   return NextResponse.json({

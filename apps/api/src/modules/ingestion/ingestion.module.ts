@@ -5,9 +5,10 @@ import { ParserModule } from "../parser/parser.module.js";
 import { EmbeddingsModule } from "../embeddings/embeddings.module.js";
 import { SyncModule } from "../sync/sync.module.js";
 import { ArchitectureModule } from "../architecture/architecture.module.js";
+import { WorkspacesModule } from "../workspaces/workspaces.module.js";
 
 @Module({
-  imports: [ParserModule, EmbeddingsModule, SyncModule, ArchitectureModule],
+  imports: [ParserModule, EmbeddingsModule, SyncModule, ArchitectureModule, WorkspacesModule],
   controllers: [IngestionController],
   providers: [IngestionService],
   exports: [IngestionService]

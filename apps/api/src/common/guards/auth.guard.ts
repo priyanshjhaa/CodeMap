@@ -1,5 +1,6 @@
 import { Injectable, CanActivate, ExecutionContext, UnauthorizedException } from '@nestjs/common';
 import { PrismaService } from '../../modules/database/prisma.service';
+import { env } from '../../config/env.js';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
@@ -8,16 +9,17 @@ export class AuthGuard implements CanActivate {
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();
 
-    // For NextAuth integration, we'll validate the session
-    // This is a simplified version - in production you'd want proper JWT validation
     const sessionHeader = request.headers.authorization;
 
     if (!sessionHeader) {
       throw new UnauthorizedException('No session provided');
     }
 
-    // Extract userId from session (you'll need to implement proper session validation)
     const userId = request.headers['x-user-id'];
+
+    if (!env.apiInternalSecret || request.headers['x-api-internal-secret'] !== env.apiInternalSecret) {
+      throw new UnauthorizedException('Invalid API proxy credential');
+    }
 
     if (!userId) {
       throw new UnauthorizedException('Invalid session');

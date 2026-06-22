@@ -18,13 +18,28 @@ model User {
   updatedAt    DateTime               @updatedAt
   memberships  Membership[]
   connections  RepositoryConnection[]
+  authSessions AuthSession[]
   chatSessions ChatSession[]
+}
+
+model AuthSession {
+  id        String   @id @default(cuid())
+  provider  String
+  expiresAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, provider])
 }
 
 model Workspace {
   id           String       @id @default(cuid())
   name         String
   slug         String       @unique
+  teamSize     Int          @default(1)
+  goal         String?
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
   memberships  Membership[]

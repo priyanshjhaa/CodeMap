@@ -1,9 +1,30 @@
-import Link from "next/link";
+"use client";
+
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 import type { RepositoryListItem } from "@codemap/shared";
+import { connectRepository } from "../lib/api-client";
 
 export function RepositoryConnectList({ repositories }: { repositories: RepositoryListItem[] }) {
+  const router = useRouter();
+  const [pendingId, setPendingId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  async function selectRepository(repository: RepositoryListItem) {
+    setError(null);
+    setPendingId(repository.id);
+    try {
+      const connected = await connectRepository(repository.providerRepoId ?? repository.id);
+      router.push(`/onboarding/sync?repo=${connected.id}`);
+    } catch (connectError) {
+      setError(connectError instanceof Error ? connectError.message : "Could not connect repository.");
+      setPendingId(null);
+    }
+  }
+
   return (
     <div className="repo-picker-grid">
+      {error ? <p className="form-error">{error}</p> : null}
       {repositories.map((repository) => (
         <article key={repository.id} className="card repo-card">
           <div className="repo-card__top">
@@ -24,9 +45,9 @@ export function RepositoryConnectList({ repositories }: { repositories: Reposito
             <span>{repository.lastActivity || "No recent activity"}</span>
           </div>
           <div className="button-row">
-            <Link className="button" href={`/onboarding/sync?repo=${repository.id}`}>
-              Select repository
-            </Link>
+            <button className="button" type="button" disabled={pendingId === repository.id} onClick={() => void selectRepository(repository)}>
+              {pendingId === repository.id ? "Connecting..." : "Select repository"}
+            </button>
             <button className="button button--secondary" type="button">
               Preview index plan
             </button>

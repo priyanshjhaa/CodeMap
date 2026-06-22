@@ -89,6 +89,16 @@ export class AuthService {
       }
     });
 
+    await this.prisma.authSession.upsert({
+      where: { userId_provider: { userId: dbUser.id, provider: "github" } },
+      update: { expiresAt: account.expires_at ? new Date(account.expires_at * 1000) : null },
+      create: {
+        userId: dbUser.id,
+        provider: "github",
+        expiresAt: account.expires_at ? new Date(account.expires_at * 1000) : null
+      }
+    });
+
     return { userId: dbUser.id, workspaceId: workspace.id };
   }
 

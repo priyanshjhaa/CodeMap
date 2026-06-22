@@ -106,6 +106,7 @@ export interface WorkspaceSummary {
 
 export interface RepositoryListItem {
   id: string;
+  providerRepoId?: string;
   name: string;
   owner: string;
   description: string;
