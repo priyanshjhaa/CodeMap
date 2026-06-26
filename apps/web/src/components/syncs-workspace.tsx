@@ -45,10 +45,12 @@ export function SyncsWorkspace() {
               <article key={sync.id} className="sync-item">
                 <div>
                   <strong>{sync.id}</strong>
-                  <p>
-                    {sync.summary
-                      ? `${sync.summary.filesIndexed} files · ${sync.summary.chunksCreated} chunks`
-                      : "No summary available"}
+                  <p className={sync.status === "failed" ? "form-error" : undefined}>
+                    {sync.status === "failed" && sync.summary?.error
+                      ? sync.summary.error
+                      : sync.summary
+                        ? `${sync.summary.filesIndexed} files · ${sync.summary.chunksCreated} chunks`
+                        : "No summary available"}
                   </p>
                 </div>
                 <div>

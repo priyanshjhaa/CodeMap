@@ -41,16 +41,38 @@ export default function SyncPage() {
   useEffect(() => {
     const selectedRepoId = new URLSearchParams(window.location.search).get("repo") ?? "repo_1";
     let cancelled = false;
+    let pollTimer: ReturnType<typeof setTimeout> | null = null;
     setRepoId(selectedRepoId);
 
     async function loadSync() {
       try {
         const initialSync = await startRepositorySync(selectedRepoId);
-        const latestSync = await getSyncProgress(selectedRepoId);
-
         if (!cancelled) {
-          setSync(latestSync ?? initialSync);
+          setSync(initialSync);
         }
+
+        async function pollSync() {
+          try {
+            const latestSync = await getSyncProgress(selectedRepoId);
+
+            if (cancelled) {
+              return;
+            }
+
+            setSync(latestSync);
+            if (latestSync.state === "ready" || latestSync.state === "failed") {
+              return;
+            }
+
+            pollTimer = setTimeout(() => void pollSync(), 1500);
+          } catch {
+            if (!cancelled) {
+              setError("Could not refresh repository sync status. Try opening the dashboard in a moment.");
+            }
+          }
+        }
+
+        pollTimer = setTimeout(() => void pollSync(), 1500);
       } catch {
         if (!cancelled) {
           setError("Could not start repository sync. Choose a different repository or try again.");
@@ -62,6 +84,9 @@ export default function SyncPage() {
 
     return () => {
       cancelled = true;
+      if (pollTimer) {
+        clearTimeout(pollTimer);
+      }
     };
   }, []);
 
@@ -70,7 +95,9 @@ export default function SyncPage() {
       <div className="card onboarding-card">
         <p className="eyebrow">Repository sync</p>
         <h2>{sync?.stageLabel ?? "Preparing repository sync"}</h2>
-        <p>{error ?? sync?.currentStep ?? "CodeMap is preparing the first repository pass."}</p>
+        <p className={sync?.state === "failed" || error ? "form-error" : undefined}>
+          {error ?? sync?.currentStep ?? "CodeMap is preparing the first repository pass."}
+        </p>
         <div className="meter">
           <span style={{ width: `${sync?.percentComplete ?? 18}%` }} />
         </div>

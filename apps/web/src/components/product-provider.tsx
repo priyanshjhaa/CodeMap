@@ -52,6 +52,7 @@ interface ProductContextValue {
 }
 
 const ProductContext = createContext<ProductContextValue | null>(null);
+const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export function ProductProvider({ children }: PropsWithChildren) {
   const [user, setUser] = useState<CurrentUser | null>(null);
@@ -109,6 +110,65 @@ export function ProductProvider({ children }: PropsWithChildren) {
     };
   }, []);
 
+  async function loadRepositoryState(
+    repoId: string,
+    options: { isCancelled?: () => boolean; showPending?: boolean } = {}
+  ) {
+    if (options.showPending ?? true) {
+      setPending(true);
+    }
+    setRepositoryError(null);
+
+    const [detailResult, architectureResult, sessionsResult, citationsResult, syncResult] =
+      await Promise.allSettled([
+        getRepositoryDetail(repoId),
+        getArchitectureOverview(repoId),
+        listChatSessions(repoId),
+        getCitationPreviews(repoId),
+        getSyncProgress(repoId)
+      ]);
+
+    if (options.isCancelled?.()) {
+      return;
+    }
+
+    if (detailResult.status === "rejected") {
+      setActiveRepository(null);
+      setArchitecture(null);
+      setSessions([]);
+      setSelectedCitations([]);
+      setSyncProgress(null);
+      setActiveSessionId(null);
+      setRepositoryError(
+        detailResult.reason instanceof Error
+          ? detailResult.reason.message
+          : "Unable to load repository details."
+      );
+      setPending(false);
+      return;
+    }
+
+    const detail = detailResult.value;
+    const architectureValue =
+      architectureResult.status === "fulfilled" ? architectureResult.value : null;
+    const sessionsValue =
+      sessionsResult.status === "fulfilled" ? sessionsResult.value : [];
+    const citationsValue =
+      citationsResult.status === "fulfilled" ? citationsResult.value : [];
+    const syncValue = syncResult.status === "fulfilled" ? syncResult.value : null;
+
+    startTransition(() => {
+      setActiveRepository(detail);
+      setArchitecture(architectureValue);
+      setSessions(sessionsValue);
+      setActiveSessionId(sessionsValue[0]?.id ?? null);
+      setSelectedCitations(citationsValue);
+      setSyncProgress(syncValue);
+      setRepositoryError(null);
+      setPending(false);
+    });
+  }
+
   useEffect(() => {
     if (!activeRepoId) {
       setActiveRepository(null);
@@ -122,61 +182,10 @@ export function ProductProvider({ children }: PropsWithChildren) {
     }
 
     let cancelled = false;
-    setPending(true);
-    setRepositoryError(null);
 
-    async function loadRepository() {
-      const [detailResult, architectureResult, sessionsResult, citationsResult, syncResult] =
-        await Promise.allSettled([
-          getRepositoryDetail(activeRepoId),
-          getArchitectureOverview(activeRepoId),
-          listChatSessions(activeRepoId),
-          getCitationPreviews(activeRepoId),
-          getSyncProgress(activeRepoId)
-        ]);
-
-      if (cancelled) {
-        return;
-      }
-
-      if (detailResult.status === "rejected") {
-        setActiveRepository(null);
-        setArchitecture(null);
-        setSessions([]);
-        setSelectedCitations([]);
-        setSyncProgress(null);
-        setActiveSessionId(null);
-        setRepositoryError(
-          detailResult.reason instanceof Error
-            ? detailResult.reason.message
-            : "Unable to load repository details."
-        );
-        setPending(false);
-        return;
-      }
-
-      const detail = detailResult.value;
-      const architectureValue =
-        architectureResult.status === "fulfilled" ? architectureResult.value : null;
-      const sessionsValue =
-        sessionsResult.status === "fulfilled" ? sessionsResult.value : [];
-      const citationsValue =
-        citationsResult.status === "fulfilled" ? citationsResult.value : [];
-      const syncValue = syncResult.status === "fulfilled" ? syncResult.value : null;
-
-      startTransition(() => {
-        setActiveRepository(detail);
-        setArchitecture(architectureValue);
-        setSessions(sessionsValue);
-        setActiveSessionId(sessionsValue[0]?.id ?? null);
-        setSelectedCitations(citationsValue);
-        setSyncProgress(syncValue);
-        setRepositoryError(null);
-        setPending(false);
-      });
-    }
-
-    void loadRepository();
+    void loadRepositoryState(activeRepoId, {
+      isCancelled: () => cancelled
+    });
 
     return () => {
       cancelled = true;
@@ -228,8 +237,22 @@ export function ProductProvider({ children }: PropsWithChildren) {
       const result = await startRepositorySync(activeRepoId);
       startTransition(() => {
         setSyncProgress(result);
-        setPending(false);
       });
+
+      for (let attempt = 0; attempt < 120; attempt += 1) {
+        await wait(1500);
+        const latestSync = await getSyncProgress(activeRepoId);
+        setSyncProgress(latestSync);
+
+        if (latestSync.state === "ready" || latestSync.state === "failed") {
+          await loadRepositoryState(activeRepoId, { showPending: false });
+          setPending(false);
+          return;
+        }
+      }
+
+      setRepositoryError("Repository sync is still running. Refresh sync status again in a moment.");
+      setPending(false);
     } catch (error) {
       setRepositoryError(
         error instanceof Error ? error.message : "Unable to start repository sync."

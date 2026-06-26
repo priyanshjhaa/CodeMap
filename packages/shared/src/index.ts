@@ -72,6 +72,7 @@ export interface SyncRun {
     filesIndexed: number;
     chunksCreated: number;
     languages: string[];
+    error?: string;
   };
 }
 
@@ -82,6 +83,7 @@ export interface RepositoryDetail extends RepositorySummary {
 
 export type FrontendRepoState =
   | "ready"
+  | "queued"
   | "indexing"
   | "failed"
   | "empty"
