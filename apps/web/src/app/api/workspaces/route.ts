@@ -27,6 +27,27 @@ function parseTeamSize(value: string) {
   return 500;
 }
 
+function buildLocalWorkspace(name: string, teamSize: string, goal: string): WorkspaceCookie {
+  return {
+    id: `workspace_${slugify(name) || "demo"}`,
+    name,
+    slug: slugify(name) || "workspace",
+    teamSize: parseTeamSize(teamSize),
+    goal
+  };
+}
+
+async function persistWorkspaceCookie(workspace: WorkspaceCookie) {
+  const cookieStore = await cookies();
+  cookieStore.set(WORKSPACE_COOKIE, JSON.stringify(workspace), {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+    maxAge: 60 * 60 * 24 * 30
+  });
+}
+
 export async function POST(request: Request) {
   const body = (await request.json()) as {
     name?: string;
@@ -39,11 +60,20 @@ export async function POST(request: Request) {
     return NextResponse.json({ message: "Workspace name is required" }, { status: 400 });
   }
 
+  const teamSize = body.teamSize ?? "11-50";
+  const goal = body.goal ?? "onboarding";
+
+  if (!process.env.API_BASE_URL || process.env.CODEMAP_DEMO_MODE === "true") {
+    const workspace = buildLocalWorkspace(name, teamSize, goal);
+    await persistWorkspaceCookie(workspace);
+    return NextResponse.json({ id: workspace.id, name: workspace.name });
+  }
+
   try {
     const response = await backendRequest("/workspaces", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, teamSize: parseTeamSize(body.teamSize ?? "11-50"), goal: body.goal ?? "onboarding" })
+      body: JSON.stringify({ name, teamSize: parseTeamSize(teamSize), goal })
     });
     const payload = await response.json() as { id?: string; name?: string; slug?: string; teamSize?: number; goal?: string; message?: string };
     if (!response.ok || !payload.id || !payload.name || !payload.slug) {
@@ -53,18 +83,11 @@ export async function POST(request: Request) {
       id: payload.id,
       name: payload.name,
       slug: payload.slug,
-      teamSize: payload.teamSize ?? parseTeamSize(body.teamSize ?? "11-50"),
-      goal: payload.goal ?? body.goal ?? "onboarding"
+      teamSize: payload.teamSize ?? parseTeamSize(teamSize),
+      goal: payload.goal ?? goal
     };
 
-    const cookieStore = await cookies();
-    cookieStore.set(WORKSPACE_COOKIE, JSON.stringify(workspace), {
-      httpOnly: true,
-      sameSite: "lax",
-      secure: process.env.NODE_ENV === "production",
-      path: "/",
-      maxAge: 60 * 60 * 24 * 30
-    });
+    await persistWorkspaceCookie(workspace);
 
     return NextResponse.json({ id: workspace.id, name: workspace.name });
   } catch (error) {

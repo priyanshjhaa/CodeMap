@@ -30,6 +30,8 @@ For deployment, use `npm --workspace @codemap/api run prisma:deploy` instead.
 - Nest persists users, backend OAuth sessions, workspaces, memberships, encrypted GitHub connections, and connected repositories in PostgreSQL.
 - `API_INTERNAL_SECRET` must match in both apps. It protects the authenticated Next.js-to-Nest proxy headers.
 - Set `NEXT_PUBLIC_DEMO_MODE=true` only when intentionally running the client against its demo fallback.
+- Set `NEXT_PUBLIC_USE_LIVE_API=true` with `API_BASE_URL` when running the full Nest/Postgres backend flow.
+- Without `API_BASE_URL`, onboarding can still list GitHub repositories directly from the signed-in NextAuth session, but backend-backed sync/chat/architecture data stays mocked.
 
 Run the web app locally:
 
