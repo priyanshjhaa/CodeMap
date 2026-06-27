@@ -15,6 +15,7 @@ export function ChatWorkspace() {
   } = useProduct();
   const [draft, setDraft] = useState("");
   const activeSession = sessions.find((session) => session.id === activeSessionId) ?? sessions[0];
+  const repositoryReady = activeRepository?.syncStatus === "ready";
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -65,6 +66,15 @@ export function ChatWorkspace() {
         </div>
 
         <div className="message-list">
+          {!repositoryReady ? (
+            <article className="message-bubble message-bubble--assistant">
+              <span className="message-role">CodeMap</span>
+              <p>
+                This repository is not fully indexed yet. You can still ask, but answers may be low-confidence until sync finishes.
+              </p>
+            </article>
+          ) : null}
+
           {activeSession?.messages.map((message) => (
             <article key={message.id} className={`message-bubble message-bubble--${message.role}`}>
               <span className="message-role">{message.role === "user" ? "You" : "CodeMap"}</span>

@@ -1,10 +1,11 @@
 import { Injectable, Logger } from "@nestjs/common";
 import type { Prisma, RepositorySync } from "@prisma/client";
 import type { RepositoryDetail, RepositorySummary, SyncStatus } from "@codemap/shared";
-import { createHash } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { mkdir, readFile, readdir, rm } from "node:fs/promises";
 import { join, relative, sep } from "node:path";
 import { ArchitectureService } from "../architecture/architecture.service.js";
+import { EmbeddingsService } from "../embeddings/embeddings.service.js";
 import { GithubService } from "../github/github.service.js";
 import { ParserService, type ParsedFile, type RepositorySourceFile } from "../parser/parser.service.js";
 import { PrismaService } from "../database/prisma.service.js";
@@ -109,6 +110,7 @@ export class IngestionService {
   constructor(
     private readonly parserService: ParserService,
     private readonly architectureService: ArchitectureService,
+    private readonly embeddingsService: EmbeddingsService,
     private readonly githubService: GithubService,
     private readonly prisma: PrismaService,
     private readonly workspacesService: WorkspacesService
@@ -178,11 +180,19 @@ export class IngestionService {
 
       await this.updateSync(syncId, "indexing", {
         ...summary,
-        currentStep: "Persisting indexed files and chunks.",
+        currentStep: "Creating embeddings for indexed chunks.",
         percentComplete: 85
       });
 
-      await this.persistParsedFiles(repository.id, parsedFiles);
+      const chunkEmbeddings = await this.embedParsedChunks(parsedFiles);
+
+      await this.updateSync(syncId, "indexing", {
+        ...summary,
+        currentStep: "Persisting indexed files, chunks, and embeddings.",
+        percentComplete: 92
+      });
+
+      await this.persistParsedFiles(repository.id, parsedFiles, chunkEmbeddings);
 
       await this.prisma.repository.update({
         where: { id: repository.id },
@@ -351,7 +361,11 @@ export class IngestionService {
     return sourceFiles;
   }
 
-  private async persistParsedFiles(repositoryId: string, parsedFiles: ParsedFile[]) {
+  private async persistParsedFiles(
+    repositoryId: string,
+    parsedFiles: ParsedFile[],
+    chunkEmbeddings: Map<string, number[]>
+  ) {
     await this.prisma.$transaction(async (tx) => {
       await tx.codeChunk.deleteMany({ where: { repositoryId } });
       await tx.codeFile.deleteMany({ where: { repositoryId } });
@@ -379,8 +393,14 @@ export class IngestionService {
         });
 
         if (file.chunks.length) {
+          const chunksWithIds = file.chunks.map((chunk) => ({
+            ...chunk,
+            id: randomUUID()
+          }));
+
           await tx.codeChunk.createMany({
-            data: file.chunks.map((chunk) => ({
+            data: chunksWithIds.map((chunk) => ({
+              id: chunk.id,
               repositoryId,
               fileId: createdFile.id,
               chunkIndex: chunk.chunkIndex,
@@ -391,9 +411,47 @@ export class IngestionService {
               metadata: toJson(chunk.metadata)
             }))
           });
+
+          for (const chunk of chunksWithIds) {
+            const embedding = chunkEmbeddings.get(this.chunkEmbeddingKey(file.path, chunk.chunkIndex));
+            if (!embedding) continue;
+
+            await tx.$executeRawUnsafe(
+              `UPDATE "CodeChunk" SET embedding = $1::vector WHERE id = $2`,
+              `[${embedding.join(",")}]`,
+              chunk.id
+            );
+          }
         }
       }
     });
+  }
+
+  private async embedParsedChunks(parsedFiles: ParsedFile[]) {
+    const chunkInputs: { key: string; content: string }[] = [];
+
+    for (const file of parsedFiles) {
+      for (const chunk of file.chunks) {
+        chunkInputs.push({
+          key: this.chunkEmbeddingKey(file.path, chunk.chunkIndex),
+          content: [
+            `File: ${file.path}`,
+            `Language: ${file.language}`,
+            `Metadata: ${JSON.stringify(chunk.metadata)}`,
+            chunk.content
+          ].join("\n")
+        });
+      }
+    }
+
+    const embeddings = await this.embeddingsService.embedTexts(chunkInputs.map((chunk) => chunk.content));
+    return new Map<string, number[]>(
+      chunkInputs.map((chunk, index) => [chunk.key, embeddings[index]])
+    );
+  }
+
+  private chunkEmbeddingKey(filePath: string, chunkIndex: number) {
+    return `${filePath}:${chunkIndex}`;
   }
 
   private buildSuccessSummary(parsedFiles: ParsedFile[]): SyncSummary {

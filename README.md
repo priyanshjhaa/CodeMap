@@ -32,6 +32,7 @@ For deployment, use `npm --workspace @codemap/api run prisma:deploy` instead.
 - Set `NEXT_PUBLIC_DEMO_MODE=true` only when intentionally running the client against its demo fallback.
 - Set `NEXT_PUBLIC_USE_LIVE_API=true` with `API_BASE_URL` when running the full Nest/Postgres backend flow.
 - Without `API_BASE_URL`, onboarding can still list GitHub repositories directly from the signed-in NextAuth session, but backend-backed sync/chat/architecture data stays mocked.
+- `OPENAI_API_KEY` is required for live sync embeddings and grounded chat. Sync uses `text-embedding-3-small`; chat uses `gpt-5.4-mini`.
 
 Run the web app locally:
 
