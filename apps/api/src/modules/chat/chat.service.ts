@@ -4,7 +4,7 @@ import { RetrievalService, type RetrievedChunk } from "../retrieval/retrieval.se
 import { PrismaService } from "../database/prisma.service.js";
 import { WorkspacesService } from "../workspaces/workspaces.service.js";
 import type { Prisma } from "@prisma/client";
-import { OpenAiChatService } from "./openai-chat.service.js";
+import { GroundedChatService } from "./grounded-chat.service.js";
 
 function toJson(value: unknown): Prisma.InputJsonValue {
   return JSON.parse(JSON.stringify(value)) as Prisma.InputJsonValue;
@@ -33,7 +33,7 @@ function answerFromMessage(message: { content: string; citations: Prisma.JsonVal
 export class ChatService {
   constructor(
     private readonly retrievalService: RetrievalService,
-    private readonly openAiChatService: OpenAiChatService,
+    private readonly groundedChatService: GroundedChatService,
     private readonly prisma: PrismaService,
     private readonly workspacesService: WorkspacesService
   ) {}
@@ -41,7 +41,7 @@ export class ChatService {
   async answerQuestion(userId: string, workspaceId: string | undefined, request: ChatRequest) {
     const repository = await this.workspacesService.assertRepositoryAccess(userId, request.repositoryId, workspaceId);
     const retrieval = await this.retrievalService.retrieve(repository.id, request.question);
-    const answer = await this.openAiChatService.answer({
+    const answer = await this.groundedChatService.answer({
       question: request.question,
       intent: retrieval.intent,
       retrievedChunks: retrieval.chunks,
