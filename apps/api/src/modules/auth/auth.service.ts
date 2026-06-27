@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../database/prisma.service';
-import { EncryptionService } from '../encryption/encryption.service';
+import { PrismaService } from "../database/prisma.service.js";
+import { EncryptionService } from "../encryption/encryption.service.js";
 import { GithubService } from "../github/github.service.js";
 
 interface GithubCallbackDto {

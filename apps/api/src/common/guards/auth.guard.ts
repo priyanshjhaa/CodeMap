@@ -1,5 +1,5 @@
 import { Injectable, CanActivate, ExecutionContext, UnauthorizedException } from '@nestjs/common';
-import { PrismaService } from '../../modules/database/prisma.service';
+import { PrismaService } from "../../modules/database/prisma.service.js";
 import { env } from '../../config/env.js';
 
 @Injectable()
