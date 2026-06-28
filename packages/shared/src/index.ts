@@ -77,7 +77,7 @@ export interface SyncRun {
 }
 
 export interface RepositoryDetail extends RepositorySummary {
-  architecture: ArchitectureOverview;
+  architecture: ArchitectureOverviewView;
   syncHistory: SyncRun[];
 }
 

@@ -92,9 +92,7 @@ export async function getRepositoryDetail(repoId: string): Promise<RepositoryDet
 
 export async function getArchitectureOverview(repoId: string): Promise<ArchitectureOverviewView> {
   if (USE_MOCK_DATA) return demoApi.getArchitectureOverview(repoId);
-  return requestJson(`/api/repos/${repoId}/overview`).then(
-    (detail) => (detail as RepositoryDetail).architecture as ArchitectureOverviewView
-  );
+  return requestJson(`/api/repos/${repoId}/architecture`);
 }
 
 export async function getSyncHistory(repoId: string): Promise<RepositoryDetail["syncHistory"]> {

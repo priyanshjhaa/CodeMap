@@ -193,6 +193,7 @@ export class IngestionService {
       });
 
       await this.persistParsedFiles(repository.id, parsedFiles, chunkEmbeddings);
+      await this.architectureService.createSnapshot(repository.id, repository.name, parsedFiles);
 
       await this.prisma.repository.update({
         where: { id: repository.id },
@@ -277,7 +278,7 @@ export class IngestionService {
 
     return {
       ...summary,
-      architecture: this.architectureService.getArchitecture(repository.id, repository.name),
+      architecture: await this.architectureService.getArchitecture(repository.id, repository.name),
       syncHistory: syncs.map((sync) => {
         const syncSummary = this.readSummary(sync);
         return {
