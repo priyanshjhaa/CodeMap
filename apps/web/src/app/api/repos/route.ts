@@ -6,11 +6,15 @@ function isBackendEnabled() {
   return Boolean(process.env.API_BASE_URL);
 }
 
+async function listRepositoriesFromGitHub() {
+  const repositories = await getGitHubRepositories();
+  return NextResponse.json(repositories.map(mapRepositoryListItem));
+}
+
 export async function GET() {
   if (!isBackendEnabled()) {
     try {
-      const repositories = await getGitHubRepositories();
-      return NextResponse.json(repositories.map(mapRepositoryListItem));
+      return await listRepositoriesFromGitHub();
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Failed to load repositories from GitHub.";
@@ -22,6 +26,17 @@ export async function GET() {
   try {
     return await proxyJson("/repos");
   } catch (error) {
+    if (error instanceof TypeError || (error instanceof BackendProxyError && [401, 404, 503].includes(error.status))) {
+      try {
+        return await listRepositoriesFromGitHub();
+      } catch (githubError) {
+        const message =
+          githubError instanceof Error ? githubError.message : "Failed to load repositories from GitHub.";
+        const status = message === "Unauthorized" ? 401 : 500;
+        return NextResponse.json({ message }, { status });
+      }
+    }
+
     const message =
       error instanceof Error ? error.message : "Failed to load repositories from GitHub.";
     const status = message === "Unauthorized" ? 401 : 500;
@@ -30,18 +45,26 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  if (!isBackendEnabled()) {
-    const body = (await request.json()) as { providerRepoId?: string };
-    if (!body.providerRepoId) {
-      return NextResponse.json({ message: "Repository id is required" }, { status: 400 });
-    }
+  const body = (await request.json()) as { providerRepoId?: string };
+  if (!body.providerRepoId) {
+    return NextResponse.json({ message: "Repository id is required" }, { status: 400 });
+  }
 
+  if (!isBackendEnabled()) {
     return NextResponse.json({ id: body.providerRepoId });
   }
 
   try {
-    return await proxyJson("/repos", { method: "POST", headers: { "Content-Type": "application/json" }, body: await request.text() });
+    return await proxyJson("/repos", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body)
+    });
   } catch (error) {
+    if (error instanceof TypeError || (error instanceof BackendProxyError && [401, 404, 503].includes(error.status))) {
+      return NextResponse.json({ id: body.providerRepoId });
+    }
+
     const status = error instanceof BackendProxyError ? error.status : 500;
     return NextResponse.json({ message: error instanceof Error ? error.message : "Failed to connect repository" }, { status });
   }

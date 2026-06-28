@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { BackendProxyError, backendRequest } from "../../../lib/backend";
+import { auth } from "../../../lib/auth";
 
 const WORKSPACE_COOKIE = "codemap-workspace";
 
@@ -37,6 +38,18 @@ function buildLocalWorkspace(name: string, teamSize: string, goal: string): Work
   };
 }
 
+function shouldUseLocalWorkspaceFallback(errorOrStatus: unknown) {
+  if (errorOrStatus instanceof BackendProxyError) {
+    return errorOrStatus.status === 401 || errorOrStatus.status === 404 || errorOrStatus.status === 503;
+  }
+
+  if (typeof errorOrStatus === "number") {
+    return errorOrStatus === 401 || errorOrStatus === 404 || errorOrStatus === 503;
+  }
+
+  return errorOrStatus instanceof TypeError;
+}
+
 async function persistWorkspaceCookie(workspace: WorkspaceCookie) {
   const cookieStore = await cookies();
   cookieStore.set(WORKSPACE_COOKIE, JSON.stringify(workspace), {
@@ -49,6 +62,11 @@ async function persistWorkspaceCookie(workspace: WorkspaceCookie) {
 }
 
 export async function POST(request: Request) {
+  const session = await auth();
+  if (!session?.user) {
+    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+  }
+
   const body = (await request.json()) as {
     name?: string;
     teamSize?: string;
@@ -76,6 +94,12 @@ export async function POST(request: Request) {
       body: JSON.stringify({ name, teamSize: parseTeamSize(teamSize), goal })
     });
     const payload = await response.json() as { id?: string; name?: string; slug?: string; teamSize?: number; goal?: string; message?: string };
+    if (shouldUseLocalWorkspaceFallback(response.status)) {
+      const workspace = buildLocalWorkspace(name, teamSize, goal);
+      await persistWorkspaceCookie(workspace);
+      return NextResponse.json({ id: workspace.id, name: workspace.name });
+    }
+
     if (!response.ok || !payload.id || !payload.name || !payload.slug) {
       return NextResponse.json({ message: payload.message ?? "Could not create workspace" }, { status: response.status });
     }
@@ -91,6 +115,12 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ id: workspace.id, name: workspace.name });
   } catch (error) {
+    if (shouldUseLocalWorkspaceFallback(error)) {
+      const workspace = buildLocalWorkspace(name, teamSize, goal);
+      await persistWorkspaceCookie(workspace);
+      return NextResponse.json({ id: workspace.id, name: workspace.name });
+    }
+
     const status = error instanceof BackendProxyError ? error.status : 500;
     return NextResponse.json({ message: error instanceof Error ? error.message : "Could not create workspace" }, { status });
   }
