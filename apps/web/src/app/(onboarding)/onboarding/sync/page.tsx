@@ -65,17 +65,25 @@ export default function SyncPage() {
             }
 
             pollTimer = setTimeout(() => void pollSync(), 1500);
-          } catch {
+          } catch (syncError) {
             if (!cancelled) {
-              setError("Could not refresh repository sync status. Try opening the dashboard in a moment.");
+              setError(
+                syncError instanceof Error
+                  ? syncError.message
+                  : "Could not refresh repository sync status. Try opening the dashboard in a moment."
+              );
             }
           }
         }
 
         pollTimer = setTimeout(() => void pollSync(), 1500);
-      } catch {
+      } catch (syncError) {
         if (!cancelled) {
-          setError("Could not start repository sync. Choose a different repository or try again.");
+          setError(
+            syncError instanceof Error
+              ? syncError.message
+              : "Could not start repository sync. Choose a different repository or try again."
+          );
         }
       }
     }
