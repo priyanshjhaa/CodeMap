@@ -9,6 +9,7 @@ type WorkspaceCookie = {
   slug: string;
   teamSize: number;
   goal?: string;
+  activeRepositoryId?: string;
 };
 
 const WORKSPACE_COOKIE = "codemap-workspace";
@@ -71,7 +72,7 @@ export async function GET() {
     },
     workspace: {
       ...workspace,
-      activeRepositoryId: ""
+      activeRepositoryId: workspace.activeRepositoryId ?? ""
     }
   });
 }

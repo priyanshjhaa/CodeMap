@@ -40,6 +40,13 @@ export class ReposService {
         fileCount: 0,
         health: latestSync?.status === "ready" ? "ready" : existing ? "empty" : "empty"
       };
+    }).sort((left, right) => {
+      const leftConnected = left.id !== left.providerRepoId;
+      const rightConnected = right.id !== right.providerRepoId;
+      if (leftConnected !== rightConnected) return leftConnected ? -1 : 1;
+      if (left.health === "ready" && right.health !== "ready") return -1;
+      if (right.health === "ready" && left.health !== "ready") return 1;
+      return 0;
     });
   }
 
