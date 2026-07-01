@@ -40,11 +40,20 @@ export class EmbeddingsService {
 
     for (let start = 0; start < inputs.length; start += EMBEDDING_BATCH_SIZE) {
       const batch = inputs.slice(start, start + EMBEDDING_BATCH_SIZE);
-      const response = await client.embeddings.create({
-        model: EMBEDDING_MODEL,
-        input: batch,
-        dimensions: EMBEDDING_DIMENSIONS
-      });
+      let response;
+      try {
+        response = await client.embeddings.create({
+          model: EMBEDDING_MODEL,
+          input: batch,
+          dimensions: EMBEDDING_DIMENSIONS
+        });
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "OpenAI embedding request failed.";
+        const quotaHint = message.includes("429") || message.toLowerCase().includes("quota")
+          ? " OpenAI quota or rate limit was reached; use EMBEDDINGS_PROVIDER=local for local development."
+          : "";
+        throw new ServiceUnavailableException(`${message}${quotaHint}`);
+      }
 
       const ordered = response.data
         .slice()

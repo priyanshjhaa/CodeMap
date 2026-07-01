@@ -1,4 +1,4 @@
-import { Injectable, Logger } from "@nestjs/common";
+import { ConflictException, HttpException, HttpStatus, Injectable, Logger } from "@nestjs/common";
 import type { Prisma, RepositorySync } from "@prisma/client";
 import type { RepositoryDetail, RepositorySummary, SyncStatus } from "@codemap/shared";
 import { createHash, randomUUID } from "node:crypto";
@@ -15,6 +15,7 @@ import { env } from "../../config/env.js";
 const MAX_ELIGIBLE_FILES = 2_000;
 const MAX_TOTAL_TEXT_BYTES = 25 * 1024 * 1024;
 const MAX_FILE_BYTES = 1024 * 1024;
+const SYNC_COOLDOWN_MS = 60_000;
 
 const IGNORED_DIRECTORIES = new Set([
   ".git",
@@ -118,6 +119,19 @@ export class IngestionService {
 
   async queueSync(repoId: string, userId: string, workspaceId?: string) {
     const repository = await this.workspacesService.assertRepositoryAccess(userId, repoId, workspaceId);
+    const latestSync = await this.prisma.repositorySync.findFirst({
+      where: { repositoryId: repository.id },
+      orderBy: { startedAt: "desc" }
+    });
+
+    if (latestSync?.status === "queued" || latestSync?.status === "indexing") {
+      throw new ConflictException("A repository sync is already running. Wait for it to finish before starting another sync.");
+    }
+
+    if (latestSync?.completedAt && Date.now() - latestSync.completedAt.getTime() < SYNC_COOLDOWN_MS) {
+      throw new HttpException("Repository was synced recently. Wait about a minute before starting another sync.", HttpStatus.TOO_MANY_REQUESTS);
+    }
+
     const syncRecord = await this.prisma.repositorySync.create({
       data: {
         repositoryId: repository.id,

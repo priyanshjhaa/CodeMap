@@ -23,11 +23,28 @@ export function ProductShell({ children }: { children: React.ReactNode }) {
     repositories,
     activeRepoId,
     activeRepository,
+    notifications,
     workspace,
     user,
     setActiveRepo,
-    triggerSync
+    triggerSync,
+    deleteActiveRepository,
+    dismissNotification
   } = useProduct();
+
+  function confirmDeleteRepository() {
+    if (!activeRepository) {
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Disconnect ${activeRepository.owner}/${activeRepository.name}? This deletes CodeMap's indexed files, chunks, architecture snapshots, sync history, and chat history for this repository.`
+    );
+
+    if (confirmed) {
+      void deleteActiveRepository();
+    }
+  }
 
   return (
     <div className="app-shell">
@@ -105,6 +122,29 @@ export function ProductShell({ children }: { children: React.ReactNode }) {
       </aside>
 
       <div className="app-main">
+        {notifications.length ? (
+          <div className="notice-stack" aria-live="polite">
+            {notifications.map((notification) => (
+              <section
+                key={notification.id}
+                className={`notice notice--${notification.tone}`}
+              >
+                <div>
+                  <strong>{notification.title}</strong>
+                  <p>{notification.message}</p>
+                </div>
+                <button
+                  type="button"
+                  aria-label={`Dismiss ${notification.title}`}
+                  onClick={() => dismissNotification(notification.id)}
+                >
+                  ×
+                </button>
+              </section>
+            ))}
+          </div>
+        ) : null}
+
         <header className="app-header">
           <div className="app-header__copy">
             <p className="app-breadcrumb">
@@ -133,6 +173,14 @@ export function ProductShell({ children }: { children: React.ReactNode }) {
               onClick={() => void triggerSync()}
             >
               Re-sync repository
+            </button>
+            <button
+              className="button button--danger"
+              type="button"
+              disabled={!activeRepository || pending}
+              onClick={confirmDeleteRepository}
+            >
+              Disconnect
             </button>
           </div>
         </header>

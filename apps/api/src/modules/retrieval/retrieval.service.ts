@@ -5,6 +5,7 @@ import { EmbeddingsService } from "../embeddings/embeddings.service.js";
 
 const TOP_K = 8;
 const LOW_CONFIDENCE_DISTANCE = 0.42;
+const MAX_EXCERPT_CHARS = 1_000;
 
 type ChunkMetadata = {
   filePath?: string;
@@ -107,7 +108,7 @@ export class RetrievalService {
       lineStart,
       lineEnd,
       reason: row.summary ?? `${metadata.chunkType ?? "Code"} context matched the question.`,
-      excerpt: row.content.slice(0, 1400),
+      excerpt: row.content.slice(0, MAX_EXCERPT_CHARS),
       score,
       metadata
     };

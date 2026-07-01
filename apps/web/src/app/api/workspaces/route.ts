@@ -39,6 +39,10 @@ function buildLocalWorkspace(name: string, teamSize: string, goal: string): Work
 }
 
 function shouldUseLocalWorkspaceFallback(errorOrStatus: unknown) {
+  if (process.env.CODEMAP_DEMO_MODE !== "true" && process.env.NEXT_PUBLIC_DEMO_MODE !== "true") {
+    return false;
+  }
+
   if (errorOrStatus instanceof BackendProxyError) {
     return errorOrStatus.status === 401 || errorOrStatus.status === 404 || errorOrStatus.status === 503;
   }
@@ -81,7 +85,18 @@ export async function POST(request: Request) {
   const teamSize = body.teamSize ?? "11-50";
   const goal = body.goal ?? "onboarding";
 
-  if (!process.env.API_BASE_URL || process.env.CODEMAP_DEMO_MODE === "true") {
+  if (!process.env.API_BASE_URL && process.env.CODEMAP_DEMO_MODE !== "true" && process.env.NEXT_PUBLIC_DEMO_MODE !== "true") {
+    return NextResponse.json(
+      {
+        statusCode: 503,
+        code: "SERVICE_UNAVAILABLE",
+        message: "API_BASE_URL is not configured. Enable demo mode or start the API server."
+      },
+      { status: 503 }
+    );
+  }
+
+  if (process.env.CODEMAP_DEMO_MODE === "true" || process.env.NEXT_PUBLIC_DEMO_MODE === "true") {
     const workspace = buildLocalWorkspace(name, teamSize, goal);
     await persistWorkspaceCookie(workspace);
     return NextResponse.json({ id: workspace.id, name: workspace.name });

@@ -7,10 +7,14 @@
     "packages/*"
   ],
   "scripts": {
+    "dev": "concurrently -n api,web -c blue,green \"npm run dev:api\" \"npm run dev:web\"",
+    "dev:infra": "docker compose -f infra/docker/docker-compose.yml up -d",
+    "setup:local": "npm run prisma:generate && npm --workspace @codemap/api run prisma:deploy && npm run prisma:seed",
     "dev:web": "npm --workspace @codemap/web run dev",
     "dev:api": "npm --workspace @codemap/api run start:dev",
     "build": "npm run build --workspaces",
     "lint": "npm run lint --workspaces",
+    "test": "npm run test --workspaces --if-present",
     "typecheck": "npm run typecheck --workspaces",
     "prisma:generate": "npm --workspace @codemap/api run prisma:generate",
     "prisma:migrate": "npm --workspace @codemap/api run prisma:migrate",
@@ -22,9 +26,10 @@
     "schema": "apps/api/prisma/schema.prisma"
   },
   "devDependencies": {
+    "concurrently": "^9.2.1",
     "typescript": "^5.8.3"
   },
   "engines": {
-    "node": ">=20.0.0"
+    "node": "22.x"
   }
 }

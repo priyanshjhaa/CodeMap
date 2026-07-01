@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Headers, Param, Post, Req, UseGuards } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Headers, Param, Post, Req, UseGuards } from "@nestjs/common";
 import { AuthGuard } from "../../common/guards/auth.guard.js";
 import { ReposService } from "./repos.service.js";
 
@@ -22,8 +22,13 @@ export class ReposController {
   }
 
   @Get(":repoId/citations/:path")
-  getCitation(@Param("repoId") repoId: string, @Param("path") path: string) {
-    return this.reposService.getCitation(repoId, path);
+  getCitation(
+    @Param("repoId") repoId: string,
+    @Param("path") path: string,
+    @Req() request: { user: { id: string } },
+    @Headers("x-workspace-id") workspaceId?: string
+  ) {
+    return this.reposService.getCitation(request.user.id, repoId, path, workspaceId);
   }
 
   @Get(":repoId/citations")
@@ -33,5 +38,14 @@ export class ReposController {
     @Headers("x-workspace-id") workspaceId?: string
   ) {
     return this.reposService.listCitationPreviews(request.user.id, repoId, workspaceId);
+  }
+
+  @Delete(":repoId")
+  deleteRepository(
+    @Param("repoId") repoId: string,
+    @Req() request: { user: { id: string } },
+    @Headers("x-workspace-id") workspaceId?: string
+  ) {
+    return this.reposService.deleteRepository(request.user.id, repoId, workspaceId);
   }
 }

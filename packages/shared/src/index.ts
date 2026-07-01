@@ -1,5 +1,13 @@
 export type SyncStatus = "idle" | "queued" | "indexing" | "ready" | "failed";
 
+export interface ApiErrorBody {
+  statusCode: number;
+  code: string;
+  message: string;
+  details?: unknown;
+  requestId?: string;
+}
+
 export type QueryIntent =
   | "location_lookup"
   | "flow_explanation"

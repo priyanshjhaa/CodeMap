@@ -59,8 +59,8 @@ export default function WorkspaceOnboardingPage() {
         goal
       });
       router.push("/onboarding/connect");
-    } catch {
-      setError("Could not create the workspace. Try again in a moment.");
+    } catch (error) {
+      setError(error instanceof Error ? error.message : "Could not create the workspace. Try again in a moment.");
       setPending(false);
     }
   }

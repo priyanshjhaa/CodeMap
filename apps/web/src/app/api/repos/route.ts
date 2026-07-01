@@ -6,13 +6,28 @@ function isBackendEnabled() {
   return Boolean(process.env.API_BASE_URL);
 }
 
+function isDemoMode() {
+  return process.env.CODEMAP_DEMO_MODE === "true" || process.env.NEXT_PUBLIC_DEMO_MODE === "true";
+}
+
 async function listRepositoriesFromGitHub() {
   const repositories = await getGitHubRepositories();
   return NextResponse.json(repositories.map(mapRepositoryListItem));
 }
 
 export async function GET() {
-  if (!isBackendEnabled()) {
+  if (!isBackendEnabled() && !isDemoMode()) {
+    return NextResponse.json(
+      {
+        statusCode: 503,
+        code: "SERVICE_UNAVAILABLE",
+        message: "API_BASE_URL is not configured. Enable demo mode or start the API server."
+      },
+      { status: 503 }
+    );
+  }
+
+  if (isDemoMode()) {
     try {
       return await listRepositoriesFromGitHub();
     } catch (error) {
@@ -26,7 +41,7 @@ export async function GET() {
   try {
     return await proxyJson("/repos");
   } catch (error) {
-    if (error instanceof TypeError || (error instanceof BackendProxyError && [401, 404, 503].includes(error.status))) {
+    if (isDemoMode() && (error instanceof TypeError || (error instanceof BackendProxyError && [401, 404, 503].includes(error.status)))) {
       try {
         return await listRepositoriesFromGitHub();
       } catch (githubError) {
@@ -50,7 +65,18 @@ export async function POST(request: Request) {
     return NextResponse.json({ message: "Repository id is required" }, { status: 400 });
   }
 
-  if (!isBackendEnabled()) {
+  if (!isBackendEnabled() && !isDemoMode()) {
+    return NextResponse.json(
+      {
+        statusCode: 503,
+        code: "SERVICE_UNAVAILABLE",
+        message: "API_BASE_URL is not configured. Enable demo mode or start the API server."
+      },
+      { status: 503 }
+    );
+  }
+
+  if (isDemoMode()) {
     return NextResponse.json({ id: body.providerRepoId });
   }
 
@@ -61,7 +87,7 @@ export async function POST(request: Request) {
       body: JSON.stringify(body)
     });
   } catch (error) {
-    if (error instanceof TypeError || (error instanceof BackendProxyError && [401, 404, 503].includes(error.status))) {
+    if (isDemoMode() && (error instanceof TypeError || (error instanceof BackendProxyError && [401, 404, 503].includes(error.status)))) {
       return NextResponse.json({ id: body.providerRepoId });
     }
 

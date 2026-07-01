@@ -3,6 +3,7 @@ import type { ChatAnswer, Citation, QueryIntent } from "@codemap/shared";
 import OpenAI from "openai";
 import { env } from "../../config/env.js";
 import type { RetrievedChunk } from "../retrieval/retrieval.service.js";
+import { withTimeout } from "../../common/http/timeout.js";
 
 type GroundedAnswerPayload = {
   answer?: string;
@@ -117,11 +118,23 @@ export class GroundedChatService {
     }
 
     this.openAiClient ??= new OpenAI({ apiKey: env.openAiApiKey });
-    const completion = await this.openAiClient.chat.completions.create({
-      model: env.openAiChatModel,
-      response_format: { type: "json_object" },
-      messages
-    });
+    let completion;
+    try {
+      completion = await this.openAiClient.chat.completions.create(
+        {
+          model: env.openAiChatModel,
+          response_format: { type: "json_object" },
+          messages
+        },
+        { timeout: 30_000 }
+      );
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "OpenAI chat completion failed.";
+      const quotaHint = message.includes("429") || message.toLowerCase().includes("quota")
+        ? " OpenAI quota or rate limit was reached; switch CHAT_PROVIDER=groq or add billing."
+        : "";
+      throw new ServiceUnavailableException(`${message}${quotaHint}`);
+    }
 
     return completion.choices[0]?.message.content ?? "{}";
   }
@@ -131,21 +144,29 @@ export class GroundedChatService {
       throw new ServiceUnavailableException("GROQ_API_KEY is required when CHAT_PROVIDER=groq.");
     }
 
-    const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${env.groqApiKey}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        model: env.groqChatModel,
-        response_format: { type: "json_object" },
-        messages
-      })
-    });
+    const response = await withTimeout(
+      (signal) => fetch("https://api.groq.com/openai/v1/chat/completions", {
+        signal,
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${env.groqApiKey}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          model: env.groqChatModel,
+          response_format: { type: "json_object" },
+          messages
+        })
+      }),
+      30_000,
+      "Groq chat completion"
+    );
 
     if (!response.ok) {
-      throw new ServiceUnavailableException(`Groq chat completion failed with status ${response.status}.`);
+      const hint = response.status === 429
+        ? " Groq quota or rate limit was reached; wait and retry or switch providers."
+        : "";
+      throw new ServiceUnavailableException(`Groq chat completion failed with status ${response.status}.${hint}`);
     }
 
     const payload = await response.json() as {

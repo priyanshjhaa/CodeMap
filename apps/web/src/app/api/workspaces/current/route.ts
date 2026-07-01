@@ -14,6 +14,10 @@ type WorkspaceCookie = {
 
 const WORKSPACE_COOKIE = "codemap-workspace";
 
+function isDemoMode() {
+  return process.env.CODEMAP_DEMO_MODE === "true" || process.env.NEXT_PUBLIC_DEMO_MODE === "true";
+}
+
 function getAvatarLabel(name?: string | null, email?: string | null) {
   const source = name?.trim() || email?.trim() || "CodeMap User";
   const parts = source.split(/\s+/).filter(Boolean);
@@ -33,7 +37,7 @@ export async function GET() {
     const response = await backendRequest("/workspaces/current");
     if (!response.ok) {
       const payload = await response.json().catch(() => ({ message: "Could not load workspace" })) as { message?: string };
-      if (response.status === 401 || response.status === 404 || response.status === 503) {
+      if (isDemoMode() && (response.status === 401 || response.status === 404 || response.status === 503)) {
         const localWorkspace = await readLocalWorkspace();
         if (localWorkspace) {
           workspace = localWorkspace;
@@ -47,7 +51,7 @@ export async function GET() {
       workspace = await response.json() as WorkspaceCookie;
     }
   } catch (error) {
-    if (error instanceof TypeError || (error instanceof BackendProxyError && [401, 404, 503].includes(error.status))) {
+    if (isDemoMode() && (error instanceof TypeError || (error instanceof BackendProxyError && [401, 404, 503].includes(error.status)))) {
       const localWorkspace = await readLocalWorkspace();
       if (localWorkspace) {
         workspace = localWorkspace;

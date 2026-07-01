@@ -1,10 +1,11 @@
-import { Injectable, UnauthorizedException } from "@nestjs/common";
+import { HttpException, HttpStatus, Injectable, ServiceUnavailableException, UnauthorizedException } from "@nestjs/common";
 import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { extract } from "tar";
 import { PrismaService } from "../database/prisma.service.js";
 import { EncryptionService } from "../encryption/encryption.service.js";
 import { env } from "../../config/env.js";
+import { withTimeout } from "../../common/http/timeout.js";
 
 export type GithubRepository = {
   id: number;
@@ -46,16 +47,21 @@ export class GithubService {
 
   async listRepositories(userId: string): Promise<GithubRepository[]> {
     const accessToken = await this.getAccessToken(userId);
-    const response = await fetch("https://api.github.com/user/repos?sort=updated&per_page=100", {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        Accept: "application/vnd.github+json",
-        "X-GitHub-Api-Version": "2022-11-28"
-      }
-    });
+    const response = await withTimeout(
+      (signal) => fetch("https://api.github.com/user/repos?sort=updated&per_page=100", {
+        signal,
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          Accept: "application/vnd.github+json",
+          "X-GitHub-Api-Version": "2022-11-28"
+        }
+      }),
+      15_000,
+      "GitHub repository listing"
+    );
 
     if (!response.ok) {
-      throw new UnauthorizedException("GitHub token is unavailable or does not have repository access");
+      throw this.toGithubException(response, "GitHub token is unavailable or does not have repository access");
     }
 
     return response.json() as Promise<GithubRepository[]>;
@@ -70,16 +76,22 @@ export class GithubService {
   }) {
     const accessToken = await this.getAccessToken(input.userId);
     const archiveUrl = `https://api.github.com/repos/${input.owner}/${input.name}/tarball/${input.defaultBranch}`;
-    const response = await fetch(archiveUrl, {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        Accept: "application/vnd.github+json",
-        "X-GitHub-Api-Version": "2022-11-28"
-      }
-    });
+    const response = await withTimeout(
+      (signal) => fetch(archiveUrl, {
+        signal,
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          Accept: "application/vnd.github+json",
+          "X-GitHub-Api-Version": "2022-11-28"
+        }
+      }),
+      30_000,
+      "GitHub repository archive download"
+    );
 
     if (!response.ok) {
-      throw new UnauthorizedException(
+      throw this.toGithubException(
+        response,
         response.status === 404
           ? "Repository archive was not found or is not accessible with this GitHub token"
           : "Could not download repository archive from GitHub"
@@ -101,5 +113,21 @@ export class GithubService {
       extractedPath: input.destinationPath,
       bytesDownloaded: archive.byteLength
     };
+  }
+
+  private toGithubException(response: Response, fallback: string) {
+    if (response.status === 403 || response.status === 429) {
+      const reset = response.headers.get("x-ratelimit-reset");
+      const resetMessage = reset
+        ? ` Retry after ${new Date(Number(reset) * 1000).toLocaleTimeString()}.`
+        : "";
+      return new HttpException(`GitHub rate limit or access policy blocked the request.${resetMessage}`, HttpStatus.TOO_MANY_REQUESTS);
+    }
+
+    if (response.status === 401 || response.status === 404) {
+      return new UnauthorizedException(fallback);
+    }
+
+    return new ServiceUnavailableException(`${fallback} (GitHub status ${response.status}).`);
   }
 }

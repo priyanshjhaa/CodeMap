@@ -251,6 +251,12 @@ p {
   font-size: 0.8rem;
 }
 
+.button--danger {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: rgba(239, 68, 68, 0.32);
+  color: #fecaca;
+}
+
 .button--full {
   width: 100%;
 }
@@ -677,6 +683,58 @@ p {
   gap: 20px;
   align-content: start;
   min-width: 0;
+}
+
+.notice-stack {
+  position: sticky;
+  top: 18px;
+  z-index: 20;
+  display: grid;
+  gap: 10px;
+}
+
+.notice {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 16px;
+  align-items: start;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: rgba(14, 25, 18, 0.94);
+  box-shadow: var(--shadow-soft);
+}
+
+.notice strong,
+.notice p {
+  margin: 0;
+}
+
+.notice p {
+  color: var(--muted);
+  font-size: 0.88rem;
+  margin-top: 4px;
+}
+
+.notice button {
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 1.2rem;
+  line-height: 1;
+}
+
+.notice--success {
+  border-color: rgba(16, 185, 129, 0.34);
+}
+
+.notice--warning {
+  border-color: rgba(245, 158, 11, 0.34);
+}
+
+.notice--danger {
+  border-color: rgba(239, 68, 68, 0.36);
 }
 
 .app-header h1 {

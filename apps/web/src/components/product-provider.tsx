@@ -8,6 +8,7 @@ import {
   useState,
   type PropsWithChildren
 } from "react";
+import { useRouter } from "next/navigation";
 import type {
   ArchitectureOverviewView,
   ChatSessionView,
@@ -24,6 +25,7 @@ import {
   getCurrentWorkspace,
   getRepositoryDetail,
   getSyncProgress,
+  deleteRepository,
   listRepositories,
   listChatSessions,
   sendChatMessage,
@@ -41,6 +43,7 @@ interface ProductContextValue {
   sessions: ChatSessionView[];
   activeSessionId: string | null;
   selectedCitations: CitationPreview[];
+  notifications: ProductNotification[];
   appReady: boolean;
   pending: boolean;
   bootstrapError: string | null;
@@ -49,12 +52,22 @@ interface ProductContextValue {
   setActiveSession: (sessionId: string) => void;
   askQuestion: (message: string) => Promise<void>;
   triggerSync: () => Promise<void>;
+  deleteActiveRepository: () => Promise<void>;
+  dismissNotification: (id: string) => void;
 }
+
+export type ProductNotification = {
+  id: string;
+  tone: "info" | "success" | "warning" | "danger";
+  title: string;
+  message: string;
+};
 
 const ProductContext = createContext<ProductContextValue | null>(null);
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export function ProductProvider({ children }: PropsWithChildren) {
+  const router = useRouter();
   const [user, setUser] = useState<CurrentUser | null>(null);
   const [workspace, setWorkspace] = useState<WorkspaceSummary | null>(null);
   const [repositories, setRepositories] = useState<RepositoryListItem[]>([]);
@@ -69,6 +82,16 @@ export function ProductProvider({ children }: PropsWithChildren) {
   const [pending, setPending] = useState(false);
   const [bootstrapError, setBootstrapError] = useState<string | null>(null);
   const [repositoryError, setRepositoryError] = useState<string | null>(null);
+  const [notifications, setNotifications] = useState<ProductNotification[]>([]);
+
+  function notify(notification: Omit<ProductNotification, "id">) {
+    const id = `notice_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+    setNotifications((current) => [{ id, ...notification }, ...current].slice(0, 4));
+  }
+
+  function dismissNotification(id: string) {
+    setNotifications((current) => current.filter((notification) => notification.id !== id));
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -99,6 +122,11 @@ export function ProductProvider({ children }: PropsWithChildren) {
         setBootstrapError(
           error instanceof Error ? error.message : "Unable to load workspace data."
         );
+        notify({
+          tone: "danger",
+          title: "Workspace unavailable",
+          message: error instanceof Error ? error.message : "Unable to load workspace data."
+        });
         setAppReady(true);
       }
     }
@@ -144,6 +172,14 @@ export function ProductProvider({ children }: PropsWithChildren) {
           ? detailResult.reason.message
           : "Unable to load repository details."
       );
+      notify({
+        tone: "warning",
+        title: "Repository unavailable",
+        message:
+          detailResult.reason instanceof Error
+            ? detailResult.reason.message
+            : "Unable to load repository details."
+      });
       setPending(false);
       return;
     }
@@ -221,6 +257,11 @@ export function ProductProvider({ children }: PropsWithChildren) {
       setRepositoryError(
         error instanceof Error ? error.message : "Unable to send chat message."
       );
+      notify({
+        tone: "danger",
+        title: "Chat request failed",
+        message: error instanceof Error ? error.message : "Unable to send chat message."
+      });
       setPending(false);
     }
   }
@@ -235,6 +276,11 @@ export function ProductProvider({ children }: PropsWithChildren) {
 
     try {
       const result = await startRepositorySync(activeRepoId);
+      notify({
+        tone: "info",
+        title: "Sync queued",
+        message: "Repository indexing has started."
+      });
       startTransition(() => {
         setSyncProgress(result);
       });
@@ -246,17 +292,71 @@ export function ProductProvider({ children }: PropsWithChildren) {
 
         if (latestSync.state === "ready" || latestSync.state === "failed") {
           await loadRepositoryState(activeRepoId, { showPending: false });
+          notify({
+            tone: latestSync.state === "ready" ? "success" : "danger",
+            title: latestSync.state === "ready" ? "Sync complete" : "Sync failed",
+            message: latestSync.currentStep
+          });
           setPending(false);
           return;
         }
       }
 
       setRepositoryError("Repository sync is still running. Refresh sync status again in a moment.");
+      notify({
+        tone: "warning",
+        title: "Sync still running",
+        message: "Repository sync is still running. Refresh sync status again in a moment."
+      });
       setPending(false);
     } catch (error) {
       setRepositoryError(
         error instanceof Error ? error.message : "Unable to start repository sync."
       );
+      notify({
+        tone: "danger",
+        title: "Sync failed to start",
+        message: error instanceof Error ? error.message : "Unable to start repository sync."
+      });
+      setPending(false);
+    }
+  }
+
+  async function deleteActiveRepository() {
+    if (!activeRepoId) {
+      return;
+    }
+
+    setPending(true);
+    setRepositoryError(null);
+
+    try {
+      await deleteRepository(activeRepoId);
+      const remainingRepositories = repositories.filter((repository) => repository.id !== activeRepoId);
+      setRepositories(remainingRepositories);
+      setActiveRepoId(remainingRepositories[0]?.id ?? "");
+      setActiveRepository(null);
+      setArchitecture(null);
+      setSessions([]);
+      setSelectedCitations([]);
+      setSyncProgress(null);
+      notify({
+        tone: "success",
+        title: "Repository disconnected",
+        message: "CodeMap deleted the repository index, chat history, syncs, and architecture snapshots."
+      });
+      setPending(false);
+      if (!remainingRepositories.length) {
+        router.push("/onboarding/connect");
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unable to delete repository.";
+      setRepositoryError(message);
+      notify({
+        tone: "danger",
+        title: "Delete failed",
+        message
+      });
       setPending(false);
     }
   }
@@ -272,6 +372,7 @@ export function ProductProvider({ children }: PropsWithChildren) {
     sessions,
     activeSessionId,
     selectedCitations,
+    notifications,
     appReady,
     pending,
     bootstrapError,
@@ -285,7 +386,9 @@ export function ProductProvider({ children }: PropsWithChildren) {
       setActiveSessionId(sessionId);
     },
     askQuestion,
-    triggerSync
+    triggerSync,
+    deleteActiveRepository,
+    dismissNotification
   };
 
   return <ProductContext.Provider value={value}>{children}</ProductContext.Provider>;

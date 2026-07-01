@@ -1,7 +1,10 @@
 import { BadRequestException, Injectable } from "@nestjs/common";
+import { rm } from "node:fs/promises";
+import { join } from "node:path";
 import { GithubService } from "../github/github.service.js";
 import { PrismaService } from "../database/prisma.service.js";
 import { WorkspacesService } from "../workspaces/workspaces.service.js";
+import { env } from "../../config/env.js";
 
 type ConnectRepositoryInput = { providerRepoId: string; workspaceId?: string };
 
@@ -88,7 +91,8 @@ export class ReposService {
     });
   }
 
-  getCitation(repoId: string, path: string) {
+  async getCitation(userId: string, repoId: string, path: string, workspaceId?: string) {
+    await this.workspacesService.assertRepositoryAccess(userId, repoId, workspaceId);
     return {
       repositoryId: repoId,
       filePath: path,
@@ -115,5 +119,16 @@ export class ReposService {
         lineEnd: 1
       }
     ];
+  }
+
+  async deleteRepository(userId: string, repositoryId: string, workspaceId?: string) {
+    const repository = await this.workspacesService.assertRepositoryAccess(userId, repositoryId, workspaceId);
+    await this.prisma.repository.delete({ where: { id: repository.id } });
+    await rm(join(env.repoStoragePath, repository.id), { recursive: true, force: true }).catch(() => undefined);
+
+    return {
+      id: repository.id,
+      deleted: true
+    };
   }
 }

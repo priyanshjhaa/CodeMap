@@ -1,5 +1,6 @@
 import type {
   ArchitectureOverviewView,
+  ApiErrorBody,
   ChatSessionView,
   CitationPreview,
   CurrentUser,
@@ -27,11 +28,17 @@ type ChatResponse = {
 
 export class ApiError extends Error {
   status: number;
+  code: string;
+  details?: unknown;
+  requestId?: string;
 
-  constructor(message: string, status: number) {
+  constructor(message: string, status: number, code = "REQUEST_FAILED", details?: unknown, requestId?: string) {
     super(message);
     this.name = "ApiError";
     this.status = status;
+    this.code = code;
+    this.details = details;
+    this.requestId = requestId;
   }
 }
 
@@ -49,17 +56,24 @@ async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
 
   if (!response.ok) {
     let message = `Request failed: ${response.status}`;
+    let errorBody: Partial<ApiErrorBody> | null = null;
 
     try {
-      const payload = (await response.json()) as { message?: string };
-      if (payload.message) {
-        message = payload.message;
+      errorBody = (await response.json()) as Partial<ApiErrorBody>;
+      if (errorBody.message) {
+        message = errorBody.message;
       }
     } catch {
       // Keep the default error message when the response body is empty.
     }
 
-    throw new ApiError(message, response.status);
+    throw new ApiError(
+      message,
+      response.status,
+      errorBody?.code,
+      errorBody?.details,
+      errorBody?.requestId
+    );
   }
 
   return response.json() as Promise<T>;
@@ -73,13 +87,11 @@ export async function getCurrentWorkspace(): Promise<{
 }
 
 export async function listRepositories(): Promise<RepositoryListItem[]> {
-  return process.env.NEXT_PUBLIC_DEMO_MODE === "true"
-    ? demoApi.listRepositories()
-    : requestJson("/api/repos");
+  return USE_MOCK_DATA ? demoApi.listRepositories() : requestJson("/api/repos");
 }
 
 export async function connectRepository(providerRepoId: string): Promise<{ id: string }> {
-  if (process.env.NEXT_PUBLIC_DEMO_MODE === "true") return { id: providerRepoId };
+  if (USE_MOCK_DATA) return { id: providerRepoId };
   return requestJson("/api/repos", {
     method: "POST",
     body: JSON.stringify({ providerRepoId })
@@ -141,9 +153,14 @@ export async function createWorkspace(data: WorkspaceCreateInput): Promise<{
   id: string;
   name: string;
 }> {
-  if (process.env.NEXT_PUBLIC_DEMO_MODE === "true") return { id: "workspace_demo", name: data.name };
+  if (USE_MOCK_DATA) return { id: "workspace_demo", name: data.name };
   return requestJson("/api/workspaces", {
     method: "POST",
     body: JSON.stringify(data)
   });
+}
+
+export async function deleteRepository(repoId: string): Promise<{ id: string; deleted: true }> {
+  if (USE_MOCK_DATA) return { id: repoId, deleted: true };
+  return requestJson(`/api/repos/${repoId}`, { method: "DELETE" });
 }
