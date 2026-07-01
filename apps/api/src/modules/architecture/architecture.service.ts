@@ -422,7 +422,7 @@ export class ArchitectureService {
         {
           title: "Snapshot unavailable",
           body: "CodeMap needs one successful repository sync before it can build architecture insights.",
-          bullets: ["Run or retry sync.", "Keep repository size within MVP limits.", "Check sync history for any GitHub or embedding failures."]
+          bullets: ["Run or retry sync.", "Keep repository size within MVP limits.", "Check sync history for GitHub, parsing, or vector-generation failures."]
         }
       ]
     };

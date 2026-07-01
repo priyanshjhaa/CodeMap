@@ -180,7 +180,7 @@ export class IngestionService {
 
       await this.updateSync(syncId, "indexing", {
         ...summary,
-        currentStep: "Creating embeddings for indexed chunks.",
+        currentStep: "Creating retrieval vectors for indexed chunks.",
         percentComplete: 85
       });
 
@@ -188,7 +188,7 @@ export class IngestionService {
 
       await this.updateSync(syncId, "indexing", {
         ...summary,
-        currentStep: "Persisting indexed files, chunks, and embeddings.",
+        currentStep: "Persisting indexed files, chunks, and retrieval vectors.",
         percentComplete: 92
       });
 

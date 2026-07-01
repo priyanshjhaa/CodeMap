@@ -8,14 +8,6 @@ type AuthCardProps = {
 };
 
 export function AuthCard({ githubEnabled }: AuthCardProps) {
-  const handleGitHubSignIn = async () => {
-    if (!githubEnabled) {
-      return;
-    }
-
-    await signInWithGitHub();
-  };
-
   return (
     <div className="auth-card card">
       <p className="eyebrow">Sign in to CodeMap</p>
@@ -46,9 +38,11 @@ export function AuthCard({ githubEnabled }: AuthCardProps) {
 
       <div className="button-row">
         {githubEnabled ? (
-          <button className="button" onClick={handleGitHubSignIn}>
-            Continue with GitHub
-          </button>
+          <form action={signInWithGitHub}>
+            <button className="button" type="submit">
+              Continue with GitHub
+            </button>
+          </form>
         ) : null}
         <Link className="button button--secondary" href="/">
           Back to landing

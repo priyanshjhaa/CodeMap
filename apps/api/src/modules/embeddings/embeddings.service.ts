@@ -1,10 +1,12 @@
 import { Injectable, ServiceUnavailableException } from "@nestjs/common";
+import { createHash } from "node:crypto";
 import OpenAI from "openai";
 import { env } from "../../config/env.js";
 
 export const EMBEDDING_MODEL = "text-embedding-3-small";
 const EMBEDDING_DIMENSIONS = 1536;
 const EMBEDDING_BATCH_SIZE = 96;
+const LOCAL_EMBEDDING_NAMESPACE = "codemap-local-embedding-v1";
 
 @Injectable()
 export class EmbeddingsService {
@@ -29,6 +31,10 @@ export class EmbeddingsService {
       return [];
     }
 
+    if (env.embeddingsProvider === "local") {
+      return inputs.map((input) => this.createLocalEmbedding(input));
+    }
+
     const client = this.getClient();
     const embeddings: number[][] = [];
 
@@ -49,5 +55,28 @@ export class EmbeddingsService {
     }
 
     return embeddings;
+  }
+
+  private createLocalEmbedding(input: string): number[] {
+    const vector = new Array<number>(EMBEDDING_DIMENSIONS).fill(0);
+    const tokens = input
+      .toLowerCase()
+      .replace(/[^a-z0-9_./-]+/g, " ")
+      .split(/\s+/)
+      .filter(Boolean);
+
+    const features = tokens.length ? tokens : [input.slice(0, 256) || "empty"];
+
+    for (const feature of features) {
+      const digest = createHash("sha256")
+        .update(`${LOCAL_EMBEDDING_NAMESPACE}:${feature}`)
+        .digest();
+      const index = digest.readUInt32BE(0) % EMBEDDING_DIMENSIONS;
+      const sign = digest[4] % 2 === 0 ? 1 : -1;
+      vector[index] += sign;
+    }
+
+    const magnitude = Math.sqrt(vector.reduce((sum, value) => sum + value * value, 0)) || 1;
+    return vector.map((value) => Number((value / magnitude).toFixed(8)));
   }
 }

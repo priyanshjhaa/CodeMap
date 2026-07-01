@@ -32,7 +32,7 @@ For deployment, use `npm --workspace @codemap/api run prisma:deploy` instead.
 - Set `NEXT_PUBLIC_DEMO_MODE=true` only when intentionally running the client against its demo fallback.
 - Set `NEXT_PUBLIC_USE_LIVE_API=true` with `API_BASE_URL` when running the full Nest/Postgres backend flow.
 - Without `API_BASE_URL`, onboarding can still list GitHub repositories directly from the signed-in NextAuth session, but backend-backed sync/chat/architecture data stays mocked.
-- `OPENAI_API_KEY` is required for live sync embeddings with `text-embedding-3-small`.
+- `EMBEDDINGS_PROVIDER=local` lets sync and retrieval run without OpenAI billing. Set `EMBEDDINGS_PROVIDER=openai` plus `OPENAI_API_KEY` only when using `text-embedding-3-small`.
 - Grounded chat is provider-configurable: `CHAT_PROVIDER=openai` uses `OPENAI_CHAT_MODEL`; `CHAT_PROVIDER=groq` uses `GROQ_API_KEY` and `GROQ_CHAT_MODEL`.
 
 Run the web app locally:

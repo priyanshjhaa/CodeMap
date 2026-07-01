@@ -4,6 +4,7 @@ export const env = {
   githubClientId: process.env.GITHUB_CLIENT_ID ?? "",
   githubClientSecret: process.env.GITHUB_CLIENT_SECRET ?? "",
   apiInternalSecret: process.env.API_INTERNAL_SECRET ?? "",
+  embeddingsProvider: process.env.EMBEDDINGS_PROVIDER ?? "local",
   openAiApiKey: process.env.OPENAI_API_KEY ?? "",
   chatProvider: process.env.CHAT_PROVIDER ?? "openai",
   openAiChatModel: process.env.OPENAI_CHAT_MODEL ?? "gpt-5.4-mini",
