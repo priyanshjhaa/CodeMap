@@ -1,6 +1,7 @@
-import { Controller, Post, Get, Body, Res, HttpStatus } from '@nestjs/common';
+import { Controller, Post, Get, Body, Res, HttpStatus, Delete, Req, UseGuards } from '@nestjs/common';
 import { Response } from 'express';
 import { AuthService } from "./auth.service.js";
+import { AuthGuard } from "../../common/guards/auth.guard.js";
 
 @Controller("auth")
 export class AuthController {
@@ -31,5 +32,11 @@ export class AuthController {
   @Post('signout')
   async signOut(@Res() res: Response) {
     res.json({ success: true });
+  }
+
+  @UseGuards(AuthGuard)
+  @Delete("github/connection")
+  async disconnectGithub(@Req() request: { user: { id: string } }) {
+    return this.authService.disconnectGithub(request.user.id);
   }
 }

@@ -12,6 +12,7 @@ import { PrismaService } from "../database/prisma.service.js";
 import { WorkspacesService } from "../workspaces/workspaces.service.js";
 import { env } from "../../config/env.js";
 import { SyncQueueService } from "../sync-queue/sync-queue.service.js";
+import { AuditService } from "../audit/audit.service.js";
 
 const MAX_ELIGIBLE_FILES = 2_000;
 const MAX_TOTAL_TEXT_BYTES = 25 * 1024 * 1024;
@@ -123,11 +124,19 @@ export class IngestionService {
     private readonly githubService: GithubService,
     private readonly prisma: PrismaService,
     private readonly workspacesService: WorkspacesService,
-    private readonly syncQueueService: SyncQueueService
+    private readonly syncQueueService: SyncQueueService,
+    private readonly auditService: AuditService
   ) {}
 
   async queueSync(repoId: string, userId: string, workspaceId?: string) {
     const repository = await this.workspacesService.assertRepositoryAccess(userId, repoId, workspaceId);
+    await this.auditService.record({
+      action: "sync.requested",
+      actorUserId: userId,
+      workspaceId: repository.workspaceId,
+      repositoryId: repository.id,
+      metadata: { trigger: "manual" }
+    });
     return this.createQueuedSync(repository, userId, { trigger: "manual" });
   }
 
@@ -168,6 +177,13 @@ export class IngestionService {
         completedAt: shouldCompleteAsCancelled ? new Date() : latestSync.completedAt,
         summary: toJson(summary)
       }
+    });
+    await this.auditService.record({
+      action: "sync.cancelled",
+      actorUserId: userId,
+      workspaceId: repository.workspaceId,
+      repositoryId: repository.id,
+      metadata: { syncId: latestSync.id }
     });
 
     return this.toProgress(updatedSync);
@@ -301,6 +317,13 @@ export class IngestionService {
             })
           }
         });
+        await this.auditService.record({
+          action: "sync.completed",
+          actorUserId: userId,
+          workspaceId: repository.workspaceId,
+          repositoryId: repository.id,
+          metadata: { syncId, status: "ready", unchanged: true }
+        });
         return;
       }
 
@@ -350,6 +373,13 @@ export class IngestionService {
           })
         }
       });
+      await this.auditService.record({
+        action: "sync.completed",
+        actorUserId: userId,
+        workspaceId: repository.workspaceId,
+        repositoryId: repository.id,
+        metadata: { syncId, status: "ready" }
+      });
     } catch (error) {
       const message = error instanceof Error ? error.message : "Repository sync failed.";
       const latestSync = await this.prisma.repositorySync.findUnique({ where: { id: syncId } });
@@ -368,6 +398,13 @@ export class IngestionService {
             error: message
           } satisfies SyncSummary)
         }
+      });
+      await this.auditService.record({
+        action: "sync.failed",
+        actorUserId: userId,
+        workspaceId: repository.workspaceId,
+        repositoryId: repository.id,
+        metadata: { syncId, error: message }
       });
     } finally {
       await rm(syncPath, { recursive: true, force: true }).catch(() => undefined);

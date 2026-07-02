@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from "../database/prisma.service.js";
 import { EncryptionService } from "../encryption/encryption.service.js";
 import { GithubService } from "../github/github.service.js";
+import { AuditService } from "../audit/audit.service.js";
 
 interface GithubCallbackDto {
   user: {
@@ -21,7 +22,8 @@ export class AuthService {
   constructor(
     private prisma: PrismaService,
     private encryption: EncryptionService,
-    private readonly githubService: GithubService
+    private readonly githubService: GithubService,
+    private readonly auditService: AuditService
   ) {}
 
   async handleGithubCallback(dto: GithubCallbackDto) {
@@ -100,6 +102,22 @@ export class AuthService {
     });
 
     return { userId: dbUser.id, workspaceId: workspace.id };
+  }
+
+  async disconnectGithub(userId: string) {
+    await this.prisma.repositoryConnection.deleteMany({
+      where: { userId, provider: "github" }
+    });
+    await this.prisma.authSession.deleteMany({
+      where: { userId, provider: "github" }
+    });
+    await this.auditService.record({
+      action: "github.disconnected",
+      actorUserId: userId,
+      metadata: { provider: "github" }
+    });
+
+    return { disconnected: true };
   }
 
   getGithubConnection() {

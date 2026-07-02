@@ -13,10 +13,12 @@ import { WorkspacesModule } from "../workspaces/workspaces.module.js";
 import { EncryptionModule } from "../encryption/encryption.module.js";
 import { HealthModule } from "../health/health.module.js";
 import { WebhooksModule } from "../webhooks/webhooks.module.js";
+import { AuditModule } from "../audit/audit.module.js";
 
 @Module({
   imports: [
     EncryptionModule,
+    AuditModule,
     HealthModule,
     DatabaseModule,
     WorkspacesModule,

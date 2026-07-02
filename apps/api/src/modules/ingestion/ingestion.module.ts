@@ -7,9 +7,10 @@ import { WorkspacesModule } from "../workspaces/workspaces.module.js";
 import { GithubModule } from "../github/github.module.js";
 import { EmbeddingsModule } from "../embeddings/embeddings.module.js";
 import { SyncQueueModule } from "../sync-queue/sync-queue.module.js";
+import { AuditModule } from "../audit/audit.module.js";
 
 @Module({
-  imports: [ParserModule, ArchitectureModule, WorkspacesModule, GithubModule, EmbeddingsModule, SyncQueueModule],
+  imports: [ParserModule, ArchitectureModule, WorkspacesModule, GithubModule, EmbeddingsModule, SyncQueueModule, AuditModule],
   controllers: [IngestionController],
   providers: [IngestionService],
   exports: [IngestionService]

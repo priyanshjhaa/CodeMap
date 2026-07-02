@@ -6,6 +6,7 @@ import { GithubService } from "../github/github.service.js";
 import { PrismaService } from "../database/prisma.service.js";
 import { WorkspacesService } from "../workspaces/workspaces.service.js";
 import { env } from "../../config/env.js";
+import { AuditService } from "../audit/audit.service.js";
 
 type ConnectRepositoryInput = { providerRepoId: string; workspaceId?: string };
 
@@ -22,7 +23,8 @@ export class ReposService {
   constructor(
     private readonly githubService: GithubService,
     private readonly prisma: PrismaService,
-    private readonly workspacesService: WorkspacesService
+    private readonly workspacesService: WorkspacesService,
+    private readonly auditService: AuditService
   ) {}
 
   async listRepositories(userId: string, workspaceId?: string) {
@@ -105,7 +107,7 @@ export class ReposService {
       throw new BadRequestException("Repository is not available to this GitHub account");
     }
 
-    return this.prisma.repository.upsert({
+    const repository = await this.prisma.repository.upsert({
       where: { providerRepoId: String(source.id) },
       update: {
         name: source.name,
@@ -125,6 +127,14 @@ export class ReposService {
         connectionId: connection.id
       }
     });
+    await this.auditService.record({
+      action: "repository.connected",
+      actorUserId: userId,
+      workspaceId: workspace.id,
+      repositoryId: repository.id,
+      metadata: { provider: "github", owner: repository.owner, name: repository.name }
+    });
+    return repository;
   }
 
   async getCitation(userId: string, repoId: string, path: string, workspaceId?: string) {
@@ -209,6 +219,13 @@ export class ReposService {
 
   async deleteRepository(userId: string, repositoryId: string, workspaceId?: string) {
     const repository = await this.workspacesService.assertRepositoryAccess(userId, repositoryId, workspaceId);
+    await this.auditService.record({
+      action: "repository.deleted",
+      actorUserId: userId,
+      workspaceId: repository.workspaceId,
+      repositoryId: repository.id,
+      metadata: { provider: repository.provider, owner: repository.owner, name: repository.name }
+    });
     await this.prisma.repository.delete({ where: { id: repository.id } });
     await rm(join(env.repoStoragePath, repository.id), { recursive: true, force: true }).catch(() => undefined);
 

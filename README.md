@@ -131,4 +131,6 @@ npm run dev:web
 - GitHub webhook endpoint: `POST /api/github/webhooks`. It accepts `push` events, verifies `GITHUB_WEBHOOK_SECRET` when configured, ignores non-default branches, and queues syncs for connected repositories.
 - Sync jobs can be cancelled from the Syncs page or with `DELETE /api/repos/:repoId/sync`.
 - Repository disconnect deletes CodeMap data only; it does not revoke the user's GitHub OAuth grant.
+- Deployment guide: `docs/deployment.md`.
+- Final pre-deployment checklist: `docs/final-predeployment-checklist.md`.
 - Generated files such as `.next`, `dist`, `coverage`, logs, temp repos, `.DS_Store`, and `*.tsbuildinfo` should not be tracked.

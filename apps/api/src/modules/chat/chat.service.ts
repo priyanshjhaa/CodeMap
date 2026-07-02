@@ -5,6 +5,7 @@ import { PrismaService } from "../database/prisma.service.js";
 import { WorkspacesService } from "../workspaces/workspaces.service.js";
 import type { Prisma } from "@prisma/client";
 import { GroundedChatService } from "./grounded-chat.service.js";
+import { AuditService } from "../audit/audit.service.js";
 
 function toJson(value: unknown): Prisma.InputJsonValue {
   return JSON.parse(JSON.stringify(value)) as Prisma.InputJsonValue;
@@ -41,12 +42,20 @@ export class ChatService {
     private readonly retrievalService: RetrievalService,
     private readonly groundedChatService: GroundedChatService,
     private readonly prisma: PrismaService,
-    private readonly workspacesService: WorkspacesService
+    private readonly workspacesService: WorkspacesService,
+    private readonly auditService: AuditService
   ) {}
 
   async answerQuestion(userId: string, workspaceId: string | undefined, request: ChatRequest) {
     this.assertQuestionAllowed(userId, request.repositoryId, request.question);
     const repository = await this.workspacesService.assertRepositoryAccess(userId, request.repositoryId, workspaceId);
+    await this.auditService.record({
+      action: "chat.asked",
+      actorUserId: userId,
+      workspaceId: repository.workspaceId,
+      repositoryId: repository.id,
+      metadata: { questionLength: request.question.length }
+    });
     const retrieval = await this.retrievalService.retrieve(repository.id, request.question);
     const answer = await this.groundedChatService.answer({
       question: request.question,
