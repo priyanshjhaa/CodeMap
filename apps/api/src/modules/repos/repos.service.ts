@@ -1,4 +1,5 @@
 import { BadRequestException, Injectable } from "@nestjs/common";
+import type { CitationPreview, FrontendRepoState } from "@codemap/shared";
 import { rm } from "node:fs/promises";
 import { join } from "node:path";
 import { GithubService } from "../github/github.service.js";
@@ -7,6 +8,14 @@ import { WorkspacesService } from "../workspaces/workspaces.service.js";
 import { env } from "../../config/env.js";
 
 type ConnectRepositoryInput = { providerRepoId: string; workspaceId?: string };
+
+type ChunkMetadata = {
+  filePath?: string;
+  symbol?: string;
+  lineStart?: number;
+  lineEnd?: number;
+  chunkType?: string;
+};
 
 @Injectable()
 export class ReposService {
@@ -17,15 +26,42 @@ export class ReposService {
   ) {}
 
   async listRepositories(userId: string, workspaceId?: string) {
-    const [githubRepositories, currentWorkspace] = await Promise.all([
-      this.githubService.listRepositories(userId),
-      this.workspacesService.getCurrentWorkspace(userId, workspaceId)
-    ]);
+    const currentWorkspace = await this.workspacesService.getCurrentWorkspace(userId, workspaceId);
     const connected = await this.prisma.repository.findMany({
       where: { workspaceId: currentWorkspace.id },
-      select: { providerRepoId: true, id: true, lastIndexedAt: true, syncs: { orderBy: { startedAt: "desc" }, take: 1 } }
+      select: {
+        providerRepoId: true,
+        id: true,
+        owner: true,
+        name: true,
+        visibility: true,
+        defaultBranch: true,
+        updatedAt: true,
+        lastIndexedAt: true,
+        _count: { select: { files: true } },
+        syncs: { orderBy: { startedAt: "desc" }, take: 1 }
+      }
     });
     const connectedByProviderId = new Map(connected.map((repository) => [repository.providerRepoId, repository]));
+
+    let githubRepositories;
+    try {
+      githubRepositories = await this.githubService.listRepositories(userId);
+    } catch {
+      return connected.map((repository) => ({
+        id: repository.id,
+        providerRepoId: repository.providerRepoId,
+        owner: repository.owner,
+        name: repository.name,
+        description: "GitHub access needs to be reconnected before CodeMap can refresh repository metadata.",
+        visibility: repository.visibility === "public" ? "public" : "private",
+        defaultBranch: repository.defaultBranch,
+        language: "Unknown",
+        lastActivity: repository.updatedAt.toISOString(),
+        fileCount: repository._count.files,
+        health: "access_revoked" as const
+      }));
+    }
 
     return githubRepositories.map((repository) => {
       const existing = connectedByProviderId.get(String(repository.id));
@@ -40,8 +76,8 @@ export class ReposService {
         defaultBranch: repository.default_branch || "main",
         language: repository.language ?? "Unknown",
         lastActivity: repository.pushed_at ?? repository.updated_at,
-        fileCount: 0,
-        health: latestSync?.status === "ready" ? "ready" : existing ? "empty" : "empty"
+        fileCount: existing?._count.files ?? 0,
+        health: this.toRepositoryHealth(existing ? latestSync?.status : undefined)
       };
     }).sort((left, right) => {
       const leftConnected = left.id !== left.providerRepoId;
@@ -92,33 +128,83 @@ export class ReposService {
   }
 
   async getCitation(userId: string, repoId: string, path: string, workspaceId?: string) {
-    await this.workspacesService.assertRepositoryAccess(userId, repoId, workspaceId);
+    const repository = await this.workspacesService.assertRepositoryAccess(userId, repoId, workspaceId);
+    const filePath = decodeURIComponent(path);
+    const file = await this.prisma.codeFile.findUnique({
+      where: { repositoryId_path: { repositoryId: repository.id, path: filePath } },
+      include: {
+        chunks: { orderBy: { chunkIndex: "asc" }, take: 6 }
+      }
+    });
+
+    if (!file) {
+      return {
+        repositoryId: repoId,
+        filePath,
+        excerpts: []
+      };
+    }
+
     return {
       repositoryId: repoId,
-      filePath: path,
-      excerpts: [
-        {
-          symbol: "AuthService",
-          lineStart: 12,
-          lineEnd: 28,
-          snippet:
-            "class AuthService { async login(credentials) { return this.tokenFactory.issue(credentials); } }"
-        }
-      ]
+      filePath: file.path,
+      excerpts: file.chunks.map((chunk) => {
+        const metadata = this.normalizeMetadata(chunk.metadata);
+        return {
+          symbol: metadata.symbol,
+          lineStart: metadata.lineStart,
+          lineEnd: metadata.lineEnd,
+          snippet: chunk.content.slice(0, 1_200)
+        };
+      })
     };
   }
 
   async listCitationPreviews(userId: string, repositoryId: string, workspaceId?: string) {
     const repository = await this.workspacesService.assertRepositoryAccess(userId, repositoryId, workspaceId);
-    return [
-      {
-        filePath: "README.md",
-        reason: `Repository ${repository.name} has not been indexed yet; README is the initial orientation source.`,
-        excerpt: "Source excerpts will appear after the first completed repository sync.",
-        lineStart: 1,
-        lineEnd: 1
-      }
-    ];
+    const chunks = await this.prisma.codeChunk.findMany({
+      where: {
+        repositoryId: repository.id,
+        fileId: { not: null }
+      },
+      include: { file: true },
+      orderBy: [{ file: { path: "asc" } }, { chunkIndex: "asc" }],
+      take: 12
+    });
+
+    if (!chunks.length) {
+      return [
+        {
+          filePath: "README.md",
+          reason: `Repository ${repository.name} has not been indexed yet. Run a sync to generate source-backed citations.`,
+          excerpt: "Source excerpts will appear after the first completed repository sync.",
+          lineStart: 1,
+          lineEnd: 1
+        }
+      ] satisfies CitationPreview[];
+    }
+
+    const seen = new Set<string>();
+    const previews: CitationPreview[] = [];
+
+    for (const chunk of chunks) {
+      const metadata = this.normalizeMetadata(chunk.metadata);
+      const filePath = metadata.filePath ?? chunk.file?.path ?? "Unknown file";
+      const key = `${filePath}:${metadata.symbol ?? chunk.chunkIndex}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+
+      previews.push({
+        filePath,
+        symbol: metadata.symbol,
+        lineStart: metadata.lineStart,
+        lineEnd: metadata.lineEnd,
+        reason: chunk.summary ?? `${metadata.chunkType ?? "Indexed"} context from ${filePath}.`,
+        excerpt: chunk.content.slice(0, 1_000)
+      });
+    }
+
+    return previews;
   }
 
   async deleteRepository(userId: string, repositoryId: string, workspaceId?: string) {
@@ -130,5 +216,21 @@ export class ReposService {
       id: repository.id,
       deleted: true
     };
+  }
+
+  private toRepositoryHealth(status?: string): FrontendRepoState {
+    if (status === "ready") return "ready";
+    if (status === "queued") return "queued";
+    if (status === "indexing") return "indexing";
+    if (status === "failed") return "failed";
+    return "empty";
+  }
+
+  private normalizeMetadata(metadata: unknown): ChunkMetadata {
+    if (!metadata || typeof metadata !== "object" || Array.isArray(metadata)) {
+      return {};
+    }
+
+    return metadata as ChunkMetadata;
   }
 }

@@ -10,7 +10,6 @@ import { EmbeddingsModule } from "../embeddings/embeddings.module.js";
 import { ParserModule } from "../parser/parser.module.js";
 import { DatabaseModule } from "../database/database.module.js";
 import { WorkspacesModule } from "../workspaces/workspaces.module.js";
-import { SyncModule } from "../sync/sync.module.js";
 import { EncryptionModule } from "../encryption/encryption.module.js";
 import { HealthModule } from "../health/health.module.js";
 
@@ -25,7 +24,6 @@ import { HealthModule } from "../health/health.module.js";
     EmbeddingsModule,
     RetrievalModule,
     IngestionModule,
-    SyncModule,
     ArchitectureModule,
     ChatModule,
     AuthModule,

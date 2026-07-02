@@ -15,3 +15,4 @@ tmp
 **/*.tsbuildinfo
 pnpm-lock.yaml
 package-lock.json
+.codemap-next-roadmap.md
