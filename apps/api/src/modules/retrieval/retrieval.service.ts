@@ -4,8 +4,10 @@ import { PrismaService } from "../database/prisma.service.js";
 import { EmbeddingsService } from "../embeddings/embeddings.service.js";
 
 const TOP_K = 8;
+const CANDIDATE_LIMIT = 24;
 const LOW_CONFIDENCE_DISTANCE = 0.42;
 const MAX_EXCERPT_CHARS = 1_000;
+const MAX_QUERY_TERMS = 12;
 
 type ChunkMetadata = {
   filePath?: string;
@@ -24,6 +26,7 @@ type RetrievedChunkRow = {
   metadata: unknown;
   filePath: string | null;
   distance: number;
+  lexicalRank?: number;
 };
 
 export type RetrievedChunk = {
@@ -63,7 +66,7 @@ export class RetrievalService {
     const intent = this.classify(question);
     const queryEmbedding = await this.embeddingsService.embedText(question);
     const vector = `[${queryEmbedding.join(",")}]`;
-    const rows = await this.prisma.$queryRawUnsafe<RetrievedChunkRow[]>(
+    const vectorRows = await this.prisma.$queryRawUnsafe<RetrievedChunkRow[]>(
       `
         SELECT
           c.id,
@@ -82,15 +85,94 @@ export class RetrievalService {
       `,
       repositoryId,
       vector,
-      TOP_K
+      CANDIDATE_LIMIT
     );
 
+    const lexicalRows = await this.retrieveLexicalCandidates(repositoryId, question);
+    const rows = this.mergeAndRankRows(vectorRows, lexicalRows, question).slice(0, TOP_K);
     const chunks = rows.map((row) => this.mapRow(row));
     return {
       intent,
       chunks,
-      lowConfidence: !chunks.length || (rows[0]?.distance ?? 1) > LOW_CONFIDENCE_DISTANCE
+      lowConfidence: !chunks.length || (vectorRows[0]?.distance ?? 1) > LOW_CONFIDENCE_DISTANCE
     };
+  }
+
+  private async retrieveLexicalCandidates(repositoryId: string, question: string) {
+    const terms = this.queryTerms(question);
+    if (!terms.length) {
+      return [];
+    }
+
+    const clauses = terms.map((_, index) => {
+      const param = `$${index + 2}`;
+      return `(LOWER(c.content) LIKE ${param} OR LOWER(COALESCE(c.summary, '')) LIKE ${param} OR LOWER(f.path) LIKE ${param})`;
+    });
+
+    return this.prisma.$queryRawUnsafe<RetrievedChunkRow[]>(
+      `
+        SELECT
+          c.id,
+          c.content,
+          c.summary,
+          c.language,
+          c.metadata,
+          f.path AS "filePath",
+          1::float AS distance,
+          (
+            ${clauses.map((clause) => `CASE WHEN ${clause} THEN 1 ELSE 0 END`).join(" + ")}
+          ) AS "lexicalRank"
+        FROM "CodeChunk" c
+        LEFT JOIN "CodeFile" f ON f.id = c."fileId"
+        WHERE c."repositoryId" = $1
+          AND (${clauses.join(" OR ")})
+        ORDER BY "lexicalRank" DESC, c."chunkIndex" ASC
+        LIMIT ${CANDIDATE_LIMIT}
+      `,
+      repositoryId,
+      ...terms.map((term) => `%${term}%`)
+    );
+  }
+
+  private mergeAndRankRows(vectorRows: RetrievedChunkRow[], lexicalRows: RetrievedChunkRow[], question: string) {
+    const merged = new Map<string, RetrievedChunkRow>();
+
+    for (const row of vectorRows) {
+      merged.set(row.id, row);
+    }
+
+    for (const row of lexicalRows) {
+      const existing = merged.get(row.id);
+      if (!existing) {
+        merged.set(row.id, row);
+        continue;
+      }
+
+      merged.set(row.id, {
+        ...existing,
+        lexicalRank: Math.max(existing.lexicalRank ?? 0, row.lexicalRank ?? 0)
+      });
+    }
+
+    return Array.from(merged.values()).sort((left, right) => {
+      const rightScore = this.combinedScore(right, question);
+      const leftScore = this.combinedScore(left, question);
+      return rightScore - leftScore;
+    });
+  }
+
+  private combinedScore(row: RetrievedChunkRow, question: string) {
+    const metadata = this.normalizeMetadata(row.metadata);
+    const vectorScore = Number.isFinite(row.distance) ? Math.max(0, 1 - Number(row.distance)) : 0;
+    const lexicalScore = Math.min(0.3, (row.lexicalRank ?? 0) * 0.08);
+    const normalizedQuestion = question.toLowerCase();
+    const filePath = (metadata.filePath ?? row.filePath ?? "").toLowerCase();
+    const symbol = (metadata.symbol ?? "").toLowerCase();
+    const pathBoost = this.queryTerms(question).some((term) => filePath.includes(term)) ? 0.12 : 0;
+    const symbolBoost = symbol && normalizedQuestion.includes(symbol) ? 0.18 : 0;
+    const symbolChunkBoost = metadata.chunkType === "symbol" ? 0.04 : 0;
+
+    return vectorScore + lexicalScore + pathBoost + symbolBoost + symbolChunkBoost;
   }
 
   private mapRow(row: RetrievedChunkRow): RetrievedChunk {
@@ -120,5 +202,18 @@ export class RetrievalService {
     }
 
     return metadata as ChunkMetadata;
+  }
+
+  private queryTerms(question: string) {
+    return Array.from(
+      new Set(
+        question
+          .toLowerCase()
+          .replace(/[^a-z0-9_./-]+/g, " ")
+          .split(/\s+/)
+          .filter((term) => term.length >= 3)
+          .filter((term) => !["where", "which", "what", "how", "does", "this", "that", "with", "from", "into", "implemented", "implementation"].includes(term))
+      )
+    ).slice(0, MAX_QUERY_TERMS);
   }
 }

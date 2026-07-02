@@ -5,7 +5,7 @@ CodeMap is a hosted onboarding assistant for engineering teams. The MVP lets a d
 ## Repository Layout
 
 - `apps/web`: Next.js app for auth, onboarding, dashboard, chat, sync history, and architecture views.
-- `apps/api`: NestJS API for GitHub access, repository ingestion, retrieval, chat, and architecture snapshots.
+- `apps/api`: NestJS API and BullMQ worker for GitHub access, repository ingestion, retrieval, chat, and architecture snapshots.
 - `packages/shared`: Shared frontend/API contracts.
 - `packages/ui`: Shared UI package placeholder.
 - `infra/docker`: Local PostgreSQL with pgvector and Redis.
@@ -38,6 +38,7 @@ cp apps/web/.env.example apps/web/.env
 - `ENCRYPTION_KEY`: generate with `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`.
 - `API_INTERNAL_SECRET`: use the same random value in `apps/api/.env` and `apps/web/.env`.
 - `GITHUB_CLIENT_ID` and `GITHUB_CLIENT_SECRET`: required for live GitHub OAuth.
+- `GITHUB_WEBHOOK_SECRET`: optional. Set it when configuring GitHub push webhooks for automatic default-branch re-syncs.
 - `EMBEDDINGS_PROVIDER=local`: recommended for local development.
 - `CHAT_PROVIDER=groq` plus `GROQ_API_KEY`, or `CHAT_PROVIDER=openai` plus `OPENAI_API_KEY`.
 
@@ -53,13 +54,13 @@ npm run dev:infra
 npm run setup:local
 ```
 
-6. Run web and API together.
+6. Run web, API, and sync worker together.
 
 ```bash
 npm run dev
 ```
 
-The API runs on `http://localhost:4000`, and the web app runs on `http://localhost:3000`.
+The API runs on `http://localhost:4000`, the sync worker consumes Redis queue `codemap-sync`, and the web app runs on `http://localhost:3000`.
 
 ## Health Check
 
@@ -93,7 +94,8 @@ In live mode, backend failures are shown as errors instead of silently falling b
 ## Common Commands
 
 ```bash
-npm run dev              # API + web together
+npm run dev              # API + worker + web together
+npm run dev:worker       # BullMQ sync worker only
 npm run dev:web          # Next.js only
 npm run dev:api          # NestJS only
 npm run dev:infra        # Postgres + Redis
@@ -115,6 +117,8 @@ npm run dev:web
 - GitHub OAuth through NextAuth and Nest-backed token persistence.
 - Workspace creation and repository connection.
 - Manual repository sync from GitHub default-branch tarballs.
+- Redis/BullMQ-backed repository sync worker with manual and GitHub push-triggered syncs.
+- Shallow no-change sync detection that preserves the existing index when eligible file checksums are unchanged.
 - TS/JS-first parsing, chunking, local/OpenAI embeddings, and pgvector retrieval.
 - Grounded chat through Groq or OpenAI with citations.
 - Lightweight architecture snapshots generated from indexed metadata.
@@ -122,6 +126,7 @@ npm run dev:web
 
 ## Notes
 
-- Redis is included in local infra for future queue work, but Phase 6 still uses in-process sync tasks.
+- Redis is required for repository sync jobs. Start it with `npm run dev:infra` before triggering sync.
+- GitHub webhook endpoint: `POST /api/github/webhooks`. It accepts `push` events, verifies `GITHUB_WEBHOOK_SECRET` when configured, ignores non-default branches, and queues syncs for connected repositories.
 - Repository disconnect deletes CodeMap data only; it does not revoke the user's GitHub OAuth grant.
 - Generated files such as `.next`, `dist`, `coverage`, logs, temp repos, `.DS_Store`, and `*.tsbuildinfo` should not be tracked.

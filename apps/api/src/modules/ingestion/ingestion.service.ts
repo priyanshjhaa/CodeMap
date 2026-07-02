@@ -1,5 +1,5 @@
-import { ConflictException, HttpException, HttpStatus, Injectable, Logger } from "@nestjs/common";
-import type { Prisma, RepositorySync } from "@prisma/client";
+import { ConflictException, HttpException, HttpStatus, Injectable, Logger, ServiceUnavailableException } from "@nestjs/common";
+import type { Prisma, Repository, RepositorySync } from "@prisma/client";
 import type { RepositoryDetail, RepositorySummary, SyncStatus } from "@codemap/shared";
 import { createHash, randomUUID } from "node:crypto";
 import { mkdir, readFile, readdir, rm } from "node:fs/promises";
@@ -11,6 +11,7 @@ import { ParserService, type ParsedFile, type RepositorySourceFile } from "../pa
 import { PrismaService } from "../database/prisma.service.js";
 import { WorkspacesService } from "../workspaces/workspaces.service.js";
 import { env } from "../../config/env.js";
+import { SyncQueueService } from "../sync-queue/sync-queue.service.js";
 
 const MAX_ELIGIBLE_FILES = 2_000;
 const MAX_TOTAL_TEXT_BYTES = 25 * 1024 * 1024;
@@ -63,6 +64,7 @@ type SyncSummary = {
   currentStep?: string;
   percentComplete?: number;
   error?: string;
+  trigger?: string;
 };
 
 function normalizePath(path: string) {
@@ -114,11 +116,39 @@ export class IngestionService {
     private readonly embeddingsService: EmbeddingsService,
     private readonly githubService: GithubService,
     private readonly prisma: PrismaService,
-    private readonly workspacesService: WorkspacesService
+    private readonly workspacesService: WorkspacesService,
+    private readonly syncQueueService: SyncQueueService
   ) {}
 
   async queueSync(repoId: string, userId: string, workspaceId?: string) {
     const repository = await this.workspacesService.assertRepositoryAccess(userId, repoId, workspaceId);
+    return this.createQueuedSync(repository, userId, { trigger: "manual" });
+  }
+
+  async queueWebhookSync(input: {
+    repositoryId: string;
+    userId: string;
+    commitSha?: string;
+  }) {
+    const repository = await this.prisma.repository.findUnique({
+      where: { id: input.repositoryId }
+    });
+
+    if (!repository) {
+      throw new Error("Repository not found for webhook sync.");
+    }
+
+    return this.createQueuedSync(repository, input.userId, {
+      trigger: "github_webhook",
+      commitSha: input.commitSha
+    });
+  }
+
+  private async createQueuedSync(
+    repository: Pick<Repository, "id">,
+    userId: string,
+    options: { trigger: string; commitSha?: string }
+  ) {
     const latestSync = await this.prisma.repositorySync.findFirst({
       where: { repositoryId: repository.id },
       orderBy: { startedAt: "desc" }
@@ -136,21 +166,42 @@ export class IngestionService {
       data: {
         repositoryId: repository.id,
         status: "queued",
+        commitSha: options.commitSha,
         summary: toJson({
           currentStep: "Repository sync is queued.",
-          percentComplete: 5
+          percentComplete: 5,
+          trigger: options.trigger
         } satisfies SyncSummary)
       }
     });
 
-    void this.runSyncTask(syncRecord.id, userId).catch((error) => {
-      this.logger.error(`Unhandled sync failure for ${syncRecord.id}`, error instanceof Error ? error.stack : String(error));
-    });
+    try {
+      await this.syncQueueService.enqueueSync({
+        syncId: syncRecord.id,
+        repositoryId: repository.id,
+        userId
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Could not enqueue repository sync.";
+      await this.prisma.repositorySync.update({
+        where: { id: syncRecord.id },
+        data: {
+          status: "failed",
+          completedAt: new Date(),
+          summary: toJson({
+            currentStep: "Could not enqueue repository sync. Confirm Redis is running and retry.",
+            percentComplete: 100,
+            error: message
+          } satisfies SyncSummary)
+        }
+      });
+      throw new ServiceUnavailableException("Could not queue repository sync. Confirm Redis is running and retry.");
+    }
 
     return this.toProgress(syncRecord);
   }
 
-  private async runSyncTask(syncId: string, userId: string) {
+  async processQueuedSync(syncId: string, userId: string) {
     const syncRecord = await this.prisma.repositorySync.findUnique({
       where: { id: syncId },
       include: { repository: true }
@@ -183,6 +234,22 @@ export class IngestionService {
       });
 
       const sourceFiles = await this.collectEligibleFiles(syncPath);
+      const unchangedSummary = await this.detectUnchangedIndex(repository.id, sourceFiles);
+      if (unchangedSummary) {
+        await this.prisma.repositorySync.update({
+          where: { id: syncId },
+          data: {
+            status: "ready",
+            completedAt: new Date(),
+            summary: toJson({
+              ...unchangedSummary,
+              currentStep: "No source changes detected. Existing index was preserved.",
+              percentComplete: 100
+            })
+          }
+        });
+        return;
+      }
 
       await this.updateSync(syncId, "indexing", {
         currentStep: `Parsing ${sourceFiles.length} eligible files.`,
@@ -440,6 +507,35 @@ export class IngestionService {
         }
       }
     });
+  }
+
+  private async detectUnchangedIndex(repositoryId: string, sourceFiles: RepositorySourceFile[]): Promise<SyncSummary | null> {
+    const existingFiles = await this.prisma.codeFile.findMany({
+      where: { repositoryId },
+      select: { path: true, checksum: true, language: true }
+    });
+
+    if (!existingFiles.length || existingFiles.length !== sourceFiles.length) {
+      return null;
+    }
+
+    const existingByPath = new Map(existingFiles.map((file) => [file.path, file]));
+    const unchanged = sourceFiles.every((file) => existingByPath.get(file.path)?.checksum === file.checksum);
+    if (!unchanged) {
+      return null;
+    }
+
+    const [chunkCount, symbolCount] = await Promise.all([
+      this.prisma.codeChunk.count({ where: { repositoryId } }),
+      this.prisma.codeSymbol.count({ where: { file: { repositoryId } } })
+    ]);
+
+    return {
+      filesIndexed: existingFiles.length,
+      chunksCreated: chunkCount,
+      symbolsExtracted: symbolCount,
+      languages: Array.from(new Set(existingFiles.map((file) => file.language))).sort()
+    };
   }
 
   private async embedParsedChunks(parsedFiles: ParsedFile[]) {

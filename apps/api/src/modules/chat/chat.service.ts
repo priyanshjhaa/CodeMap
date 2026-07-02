@@ -1,4 +1,4 @@
-import { Injectable } from "@nestjs/common";
+import { BadRequestException, HttpException, HttpStatus, Injectable } from "@nestjs/common";
 import type { ChatAnswer, ChatRequest, CitationPreview } from "@codemap/shared";
 import { RetrievalService, type RetrievedChunk } from "../retrieval/retrieval.service.js";
 import { PrismaService } from "../database/prisma.service.js";
@@ -29,8 +29,14 @@ function answerFromMessage(message: { content: string; citations: Prisma.JsonVal
   } as ChatAnswer;
 }
 
+const CHAT_RATE_WINDOW_MS = 60_000;
+const CHAT_RATE_LIMIT = 20;
+const MAX_QUESTION_CHARS = 2_000;
+
 @Injectable()
 export class ChatService {
+  private readonly rateLimits = new Map<string, number[]>();
+
   constructor(
     private readonly retrievalService: RetrievalService,
     private readonly groundedChatService: GroundedChatService,
@@ -39,6 +45,7 @@ export class ChatService {
   ) {}
 
   async answerQuestion(userId: string, workspaceId: string | undefined, request: ChatRequest) {
+    this.assertQuestionAllowed(userId, request.repositoryId, request.question);
     const repository = await this.workspacesService.assertRepositoryAccess(userId, request.repositoryId, workspaceId);
     const retrieval = await this.retrievalService.retrieve(repository.id, request.question);
     const answer = await this.groundedChatService.answer({
@@ -113,13 +120,42 @@ export class ChatService {
   }
 
   private toCitationPreviews(answer: ChatAnswer, chunks: RetrievedChunk[]): CitationPreview[] {
+    const chunksByPathAndSymbol = new Map(
+      chunks.map((chunk) => [this.citationKey(chunk.filePath, chunk.symbol), chunk])
+    );
     const chunksByPath = new Map(chunks.map((chunk) => [chunk.filePath, chunk]));
     return answer.citations.map((citation) => {
-      const chunk = chunksByPath.get(citation.filePath);
+      const chunk =
+        chunksByPathAndSymbol.get(this.citationKey(citation.filePath, citation.symbol)) ??
+        chunksByPath.get(citation.filePath);
       return {
         ...citation,
         excerpt: chunk?.excerpt ?? "Retrieved source excerpt is no longer available."
       };
     });
+  }
+
+  private citationKey(filePath: string, symbol?: string) {
+    return `${filePath}:${symbol ?? ""}`;
+  }
+
+  private assertQuestionAllowed(userId: string, repositoryId: string, question: string) {
+    if (!question.trim()) {
+      throw new BadRequestException("Question is required.");
+    }
+
+    if (question.length > MAX_QUESTION_CHARS) {
+      throw new BadRequestException(`Question is too long. Keep it under ${MAX_QUESTION_CHARS} characters.`);
+    }
+
+    const key = `${userId}:${repositoryId}`;
+    const now = Date.now();
+    const recent = (this.rateLimits.get(key) ?? []).filter((timestamp) => now - timestamp < CHAT_RATE_WINDOW_MS);
+    if (recent.length >= CHAT_RATE_LIMIT) {
+      throw new HttpException("Chat rate limit reached. Wait a minute before asking another question.", HttpStatus.TOO_MANY_REQUESTS);
+    }
+
+    recent.push(now);
+    this.rateLimits.set(key, recent);
   }
 }

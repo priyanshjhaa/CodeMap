@@ -6,9 +6,10 @@ import { ArchitectureModule } from "../architecture/architecture.module.js";
 import { WorkspacesModule } from "../workspaces/workspaces.module.js";
 import { GithubModule } from "../github/github.module.js";
 import { EmbeddingsModule } from "../embeddings/embeddings.module.js";
+import { SyncQueueModule } from "../sync-queue/sync-queue.module.js";
 
 @Module({
-  imports: [ParserModule, ArchitectureModule, WorkspacesModule, GithubModule, EmbeddingsModule],
+  imports: [ParserModule, ArchitectureModule, WorkspacesModule, GithubModule, EmbeddingsModule, SyncQueueModule],
   controllers: [IngestionController],
   providers: [IngestionService],
   exports: [IngestionService]

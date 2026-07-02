@@ -17,6 +17,8 @@ type ChatMessage = {
   content: string;
 };
 
+const MAX_CONTEXT_CHUNKS = 6;
+
 @Injectable()
 export class GroundedChatService {
   private openAiClient: OpenAI | null = null;
@@ -43,11 +45,12 @@ export class GroundedChatService {
     }
 
     const messages = this.buildMessages(input);
+    const boundedChunks = input.retrievedChunks.slice(0, MAX_CONTEXT_CHUNKS);
     const raw = env.chatProvider === "groq"
       ? await this.completeWithGroq(messages)
       : await this.completeWithOpenAi(messages);
-    const parsed = JSON.parse(raw || "{}") as GroundedAnswerPayload;
-    const allowed = new Map(input.retrievedChunks.map((chunk) => [chunk.filePath, chunk]));
+    const parsed = this.parseGroundedPayload(raw);
+    const allowed = new Map(boundedChunks.map((chunk) => [chunk.filePath, chunk]));
     const citations = (parsed.citations ?? [])
       .filter((citation) => allowed.has(citation.filePath))
       .slice(0, 5)
@@ -61,15 +64,24 @@ export class GroundedChatService {
           reason: citation.reason || source?.reason || "Relevant retrieved repository context."
         };
       });
+    const fallbackCitations = citations.length
+      ? citations
+      : boundedChunks.slice(0, 3).map((chunk) => ({
+        filePath: chunk.filePath,
+        symbol: chunk.symbol,
+        lineStart: chunk.lineStart,
+        lineEnd: chunk.lineEnd,
+        reason: chunk.reason
+      }));
 
     return {
       answer:
         parsed.answer ??
-        "I found related repository context, but could not produce a confident answer from it.",
+        this.fallbackAnswer(input.question, input.lowConfidence, boundedChunks),
       confidence: input.lowConfidence ? "low" : parsed.confidence ?? "medium",
       intent: input.intent,
-      citations,
-      followUps: (parsed.followUps ?? []).slice(0, 3)
+      citations: fallbackCitations,
+      followUps: this.followUps(parsed.followUps, input.lowConfidence)
     };
   }
 
@@ -79,7 +91,7 @@ export class GroundedChatService {
     retrievedChunks: RetrievedChunk[];
     lowConfidence: boolean;
   }): ChatMessage[] {
-    const context = input.retrievedChunks.map((chunk, index) => ({
+    const context = input.retrievedChunks.slice(0, MAX_CONTEXT_CHUNKS).map((chunk, index) => ({
       index,
       filePath: chunk.filePath,
       symbol: chunk.symbol,
@@ -96,6 +108,7 @@ export class GroundedChatService {
           "You are CodeMap, a careful codebase onboarding assistant.",
           "Answer only from the provided repository context.",
           "If context is weak, say what is uncertain and do not invent files or behavior.",
+          "Prefer direct file and symbol locations when the user asks where functionality lives.",
           "Return JSON with keys: answer, confidence, citations, followUps.",
           "Citations must use only provided filePath, symbol, lineStart, lineEnd values."
         ].join(" ")
@@ -173,5 +186,44 @@ export class GroundedChatService {
       choices?: Array<{ message?: { content?: string } }>;
     };
     return payload.choices?.[0]?.message?.content ?? "{}";
+  }
+
+  private parseGroundedPayload(raw: string) {
+    try {
+      return JSON.parse(raw || "{}") as GroundedAnswerPayload;
+    } catch {
+      return {};
+    }
+  }
+
+  private fallbackAnswer(question: string, lowConfidence: boolean, chunks: RetrievedChunk[]) {
+    const locations = chunks
+      .slice(0, 3)
+      .map((chunk) => `${chunk.filePath}${chunk.symbol ? ` (${chunk.symbol})` : ""}`)
+      .join(", ");
+
+    if (lowConfidence) {
+      return `I found only weak repository matches for "${question}". The closest indexed areas are ${locations || "not available"}, so treat this as a starting point rather than a definitive answer.`;
+    }
+
+    return `The strongest indexed matches for "${question}" are ${locations || "not available"}. Review the cited files for the exact implementation details.`;
+  }
+
+  private followUps(modelFollowUps: string[] | undefined, lowConfidence: boolean) {
+    if (modelFollowUps?.length) {
+      return modelFollowUps.slice(0, 3);
+    }
+
+    return lowConfidence
+      ? [
+        "Can you rephrase with a specific feature, file, or symbol name?",
+        "Which files are closest to this question?",
+        "Should I inspect the architecture overview first?"
+      ]
+      : [
+        "Where should I start reading this flow?",
+        "Which files call into this code?",
+        "What should I change carefully in this area?"
+      ];
   }
 }

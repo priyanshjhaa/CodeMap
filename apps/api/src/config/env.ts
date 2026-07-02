@@ -1,8 +1,10 @@
 export const env = {
   databaseUrl: process.env.DATABASE_URL ?? "",
   redisUrl: process.env.REDIS_URL ?? "",
+  syncQueueName: process.env.SYNC_QUEUE_NAME ?? "codemap-sync",
   githubClientId: process.env.GITHUB_CLIENT_ID ?? "",
   githubClientSecret: process.env.GITHUB_CLIENT_SECRET ?? "",
+  githubWebhookSecret: process.env.GITHUB_WEBHOOK_SECRET ?? "",
   apiInternalSecret: process.env.API_INTERNAL_SECRET ?? "",
   encryptionKey: process.env.ENCRYPTION_KEY ?? "",
   embeddingsProvider: process.env.EMBEDDINGS_PROVIDER ?? "local",
@@ -17,6 +19,7 @@ export const env = {
 export function validateEnv() {
   const missing: string[] = [];
   if (!env.databaseUrl) missing.push("DATABASE_URL");
+  if (!env.redisUrl) missing.push("REDIS_URL");
   if (!env.apiInternalSecret) missing.push("API_INTERNAL_SECRET");
   if (!env.repoStoragePath) missing.push("REPO_STORAGE_PATH");
 

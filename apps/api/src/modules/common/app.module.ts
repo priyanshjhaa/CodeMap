@@ -12,6 +12,7 @@ import { DatabaseModule } from "../database/database.module.js";
 import { WorkspacesModule } from "../workspaces/workspaces.module.js";
 import { EncryptionModule } from "../encryption/encryption.module.js";
 import { HealthModule } from "../health/health.module.js";
+import { WebhooksModule } from "../webhooks/webhooks.module.js";
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { HealthModule } from "../health/health.module.js";
     EmbeddingsModule,
     RetrievalModule,
     IngestionModule,
+    WebhooksModule,
     ArchitectureModule,
     ChatModule,
     AuthModule,
