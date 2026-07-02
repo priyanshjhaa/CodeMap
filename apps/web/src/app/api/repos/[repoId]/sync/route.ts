@@ -13,3 +13,16 @@ export async function POST(
     return NextResponse.json({ message: error instanceof Error ? error.message : "Failed to start sync" }, { status });
   }
 }
+
+export async function DELETE(
+  _request: Request,
+  context: { params: Promise<{ repoId: string }> }
+) {
+  try {
+    const { repoId } = await context.params;
+    return await proxyJson(`/repos/${repoId}/sync`, { method: "DELETE" });
+  } catch (error) {
+    const status = error instanceof BackendProxyError ? error.status : 500;
+    return NextResponse.json({ message: error instanceof Error ? error.message : "Failed to cancel sync" }, { status });
+  }
+}

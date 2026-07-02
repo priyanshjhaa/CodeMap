@@ -65,6 +65,8 @@ type SyncSummary = {
   percentComplete?: number;
   error?: string;
   trigger?: string;
+  logs?: string[];
+  cancelRequested?: boolean;
 };
 
 function normalizePath(path: string) {
@@ -99,6 +101,10 @@ function syncSteps(status: string) {
     return ["GitHub archive fetched", "Files filtered", "Sync failed before completion"];
   }
 
+  if (status === "cancelled") {
+    return ["Queued", "Cancellation requested", "Sync stopped safely"];
+  }
+
   if (status === "indexing") {
     return ["GitHub archive fetch", "File filtering", "Symbol parsing", "Chunk persistence"];
   }
@@ -123,6 +129,48 @@ export class IngestionService {
   async queueSync(repoId: string, userId: string, workspaceId?: string) {
     const repository = await this.workspacesService.assertRepositoryAccess(userId, repoId, workspaceId);
     return this.createQueuedSync(repository, userId, { trigger: "manual" });
+  }
+
+  async cancelSync(repoId: string, userId: string, workspaceId?: string) {
+    const repository = await this.workspacesService.assertRepositoryAccess(userId, repoId, workspaceId);
+    const latestSync = await this.prisma.repositorySync.findFirst({
+      where: {
+        repositoryId: repository.id,
+        status: { in: ["queued", "indexing"] }
+      },
+      orderBy: { startedAt: "desc" }
+    });
+
+    if (!latestSync) {
+      throw new ConflictException("There is no queued or indexing sync to cancel.");
+    }
+
+    const queueResult = await this.syncQueueService.cancelSync(latestSync.id);
+    const shouldCompleteAsCancelled = queueResult.removed || latestSync.status === "queued";
+    const summary = this.withLog(
+      {
+        ...this.readSummary(latestSync),
+        currentStep: queueResult.removed
+          ? "Repository sync was cancelled before worker processing started."
+          : latestSync.status === "queued"
+            ? "Repository sync was cancelled before worker processing started."
+            : "Cancellation requested. Worker will stop at the next safe checkpoint.",
+        percentComplete: shouldCompleteAsCancelled ? 100 : this.readSummary(latestSync).percentComplete,
+        cancelRequested: true
+      },
+      queueResult.reason
+    );
+
+    const updatedSync = await this.prisma.repositorySync.update({
+      where: { id: latestSync.id },
+      data: {
+        status: shouldCompleteAsCancelled ? "cancelled" : latestSync.status,
+        completedAt: shouldCompleteAsCancelled ? new Date() : latestSync.completedAt,
+        summary: toJson(summary)
+      }
+    });
+
+    return this.toProgress(updatedSync);
   }
 
   async queueWebhookSync(input: {
@@ -170,7 +218,8 @@ export class IngestionService {
         summary: toJson({
           currentStep: "Repository sync is queued.",
           percentComplete: 5,
-          trigger: options.trigger
+          trigger: options.trigger,
+          logs: [`Queued ${options.trigger} sync at ${new Date().toISOString()}.`]
         } satisfies SyncSummary)
       }
     });
@@ -208,6 +257,7 @@ export class IngestionService {
     });
 
     if (!syncRecord) return;
+    if (syncRecord.status === "cancelled") return;
 
     const repository = syncRecord.repository;
     const syncPath = join(env.repoStoragePath, repository.id, syncId);
@@ -217,6 +267,7 @@ export class IngestionService {
         currentStep: "Preparing repository archive download.",
         percentComplete: 15
       });
+      await this.assertNotCancelled(syncId);
 
       await rm(syncPath, { recursive: true, force: true });
       await mkdir(syncPath, { recursive: true });
@@ -232,6 +283,7 @@ export class IngestionService {
         currentStep: "Filtering repository files.",
         percentComplete: 35
       });
+      await this.assertNotCancelled(syncId);
 
       const sourceFiles = await this.collectEligibleFiles(syncPath);
       const unchangedSummary = await this.detectUnchangedIndex(repository.id, sourceFiles);
@@ -244,7 +296,8 @@ export class IngestionService {
             summary: toJson({
               ...unchangedSummary,
               currentStep: "No source changes detected. Existing index was preserved.",
-              percentComplete: 100
+              percentComplete: 100,
+              logs: this.withLog(this.readSummary(syncRecord), "No eligible source file checksums changed; skipped re-index.").logs
             })
           }
         });
@@ -255,6 +308,7 @@ export class IngestionService {
         currentStep: `Parsing ${sourceFiles.length} eligible files.`,
         percentComplete: 60
       });
+      await this.assertNotCancelled(syncId);
 
       const parsedFiles = this.parserService.parseFiles(sourceFiles);
       const summary = this.buildSuccessSummary(parsedFiles);
@@ -264,6 +318,7 @@ export class IngestionService {
         currentStep: "Creating retrieval vectors for indexed chunks.",
         percentComplete: 85
       });
+      await this.assertNotCancelled(syncId);
 
       const chunkEmbeddings = await this.embedParsedChunks(parsedFiles);
 
@@ -272,6 +327,7 @@ export class IngestionService {
         currentStep: "Persisting indexed files, chunks, and retrieval vectors.",
         percentComplete: 92
       });
+      await this.assertNotCancelled(syncId);
 
       await this.persistParsedFiles(repository.id, parsedFiles, chunkEmbeddings);
       await this.architectureService.createSnapshot(repository.id, repository.name, parsedFiles);
@@ -289,12 +345,18 @@ export class IngestionService {
           summary: toJson({
             ...summary,
             currentStep: "Repository is indexed and ready.",
-            percentComplete: 100
+            percentComplete: 100,
+            logs: this.withLog(this.readSummary(syncRecord), "Repository sync completed successfully.").logs
           })
         }
       });
     } catch (error) {
       const message = error instanceof Error ? error.message : "Repository sync failed.";
+      const latestSync = await this.prisma.repositorySync.findUnique({ where: { id: syncId } });
+      if (latestSync?.status === "cancelled") {
+        return;
+      }
+
       await this.prisma.repositorySync.update({
         where: { id: syncId },
         data: {
@@ -372,7 +434,9 @@ export class IngestionService {
             filesIndexed: syncSummary.filesIndexed ?? 0,
             chunksCreated: syncSummary.chunksCreated ?? 0,
             languages: syncSummary.languages ?? [],
-            error: syncSummary.error
+            error: syncSummary.error,
+            trigger: syncSummary.trigger,
+            logs: syncSummary.logs ?? []
           }
         };
       })
@@ -577,11 +641,23 @@ export class IngestionService {
   }
 
   private async updateSync(syncId: string, status: string, summary: SyncSummary) {
+    const existingSync = await this.prisma.repositorySync.findUnique({ where: { id: syncId } });
+    const existingSummary = existingSync ? this.readSummary(existingSync) : {};
     await this.prisma.repositorySync.update({
       where: { id: syncId },
       data: {
         status,
-        summary: toJson(summary)
+        summary: toJson(
+          this.withLog(
+            {
+              ...existingSummary,
+              ...summary,
+              logs: existingSummary.logs,
+              cancelRequested: existingSummary.cancelRequested
+            },
+            summary.currentStep ?? this.defaultStep(status)
+          )
+        )
       }
     });
   }
@@ -595,7 +671,8 @@ export class IngestionService {
       stageLabel: this.stageLabel(sync.status),
       percentComplete: summary.percentComplete ?? this.defaultPercent(sync.status),
       currentStep: summary.currentStep ?? this.defaultStep(sync.status),
-      steps: syncSteps(sync.status)
+      steps: syncSteps(sync.status),
+      logs: summary.logs ?? []
     };
   }
 
@@ -610,13 +687,14 @@ export class IngestionService {
   private toFrontendState(status?: string) {
     if (status === "ready") return "ready";
     if (status === "failed") return "failed";
+    if (status === "cancelled") return "cancelled";
     if (status === "queued") return "queued";
     if (status === "indexing") return "indexing";
     return "empty";
   }
 
   private toSyncStatus(status?: string): SyncStatus {
-    if (status === "ready" || status === "failed" || status === "queued" || status === "indexing") {
+    if (status === "ready" || status === "failed" || status === "queued" || status === "indexing" || status === "cancelled") {
       return status;
     }
 
@@ -626,6 +704,7 @@ export class IngestionService {
   private stageLabel(status: string) {
     if (status === "ready") return "Repository ready";
     if (status === "failed") return "Sync failed";
+    if (status === "cancelled") return "Sync cancelled";
     if (status === "indexing") return "Indexing repository";
     if (status === "queued") return "Sync queued";
     return "Ready to index";
@@ -634,6 +713,7 @@ export class IngestionService {
   private defaultStep(status: string) {
     if (status === "ready") return "Repository is indexed and ready.";
     if (status === "failed") return "Repository sync failed.";
+    if (status === "cancelled") return "Repository sync was cancelled.";
     if (status === "indexing") return "Repository indexing is in progress.";
     if (status === "queued") return "Repository sync is queued.";
     return "Start a sync to prepare repository context.";
@@ -641,8 +721,48 @@ export class IngestionService {
 
   private defaultPercent(status: string) {
     if (status === "ready" || status === "failed") return 100;
+    if (status === "cancelled") return 100;
     if (status === "indexing") return 50;
     if (status === "queued") return 5;
     return 0;
+  }
+
+  private async assertNotCancelled(syncId: string) {
+    const sync = await this.prisma.repositorySync.findUnique({ where: { id: syncId } });
+    if (!sync) return;
+    const summary = this.readSummary(sync);
+    if (!summary.cancelRequested) return;
+
+    await this.prisma.repositorySync.update({
+      where: { id: syncId },
+      data: {
+        status: "cancelled",
+        completedAt: new Date(),
+        summary: toJson(
+          this.withLog(
+            {
+              ...summary,
+              currentStep: "Repository sync was cancelled.",
+              percentComplete: 100
+            },
+            "Worker stopped because cancellation was requested."
+          )
+        )
+      }
+    });
+
+    throw new Error("Repository sync was cancelled.");
+  }
+
+  private withLog(summary: SyncSummary, message: string): SyncSummary {
+    const logs = [...(summary.logs ?? [])];
+    if (message && logs.at(-1) !== message) {
+      logs.push(`${new Date().toISOString()} ${message}`);
+    }
+
+    return {
+      ...summary,
+      logs: logs.slice(-50)
+    };
   }
 }

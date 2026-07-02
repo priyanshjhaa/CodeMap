@@ -119,6 +119,7 @@ npm run dev:web
 - Manual repository sync from GitHub default-branch tarballs.
 - Redis/BullMQ-backed repository sync worker with manual and GitHub push-triggered syncs.
 - Shallow no-change sync detection that preserves the existing index when eligible file checksums are unchanged.
+- Sync cancellation for queued/indexing jobs, plus recent sync logs in sync history.
 - TS/JS-first parsing, chunking, local/OpenAI embeddings, and pgvector retrieval.
 - Grounded chat through Groq or OpenAI with citations.
 - Lightweight architecture snapshots generated from indexed metadata.
@@ -128,5 +129,6 @@ npm run dev:web
 
 - Redis is required for repository sync jobs. Start it with `npm run dev:infra` before triggering sync.
 - GitHub webhook endpoint: `POST /api/github/webhooks`. It accepts `push` events, verifies `GITHUB_WEBHOOK_SECRET` when configured, ignores non-default branches, and queues syncs for connected repositories.
+- Sync jobs can be cancelled from the Syncs page or with `DELETE /api/repos/:repoId/sync`.
 - Repository disconnect deletes CodeMap data only; it does not revoke the user's GitHub OAuth grant.
 - Generated files such as `.next`, `dist`, `coverage`, logs, temp repos, `.DS_Store`, and `*.tsbuildinfo` should not be tracked.

@@ -4,7 +4,8 @@ import { useProduct } from "./product-provider";
 import { formatDateLabel } from "../lib/format";
 
 export function SyncsWorkspace() {
-  const { activeRepository, syncProgress } = useProduct();
+  const { activeRepository, syncProgress, pending, cancelSync } = useProduct();
+  const cancellable = syncProgress?.state === "queued" || syncProgress?.state === "indexing";
 
   return (
     <div className="content-stack">
@@ -19,6 +20,11 @@ export function SyncsWorkspace() {
           <div className="meter">
             <span style={{ width: `${syncProgress?.percentComplete ?? 0}%` }} />
           </div>
+          {cancellable ? (
+            <button className="button button--secondary" type="button" disabled={pending} onClick={() => void cancelSync()}>
+              Cancel sync
+            </button>
+          ) : null}
         </article>
 
         <article className="card">
@@ -52,6 +58,17 @@ export function SyncsWorkspace() {
                         ? `${sync.summary.filesIndexed} files · ${sync.summary.chunksCreated} chunks`
                         : "No summary available"}
                   </p>
+                  {sync.summary?.trigger ? <span className="mini-meta">Trigger: {sync.summary.trigger.replace("_", " ")}</span> : null}
+                  {sync.summary?.logs?.length ? (
+                    <details className="sync-log">
+                      <summary>Sync log</summary>
+                      <ul>
+                        {sync.summary.logs.slice(-6).map((entry) => (
+                          <li key={entry}>{entry}</li>
+                        ))}
+                      </ul>
+                    </details>
+                  ) : null}
                 </div>
                 <div>
                   <span className={`status-pill status-pill--${sync.status}`}>{sync.status}</span>

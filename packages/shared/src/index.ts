@@ -1,4 +1,4 @@
-export type SyncStatus = "idle" | "queued" | "indexing" | "ready" | "failed";
+export type SyncStatus = "idle" | "queued" | "indexing" | "ready" | "failed" | "cancelled";
 
 export interface ApiErrorBody {
   statusCode: number;
@@ -81,6 +81,8 @@ export interface SyncRun {
     chunksCreated: number;
     languages: string[];
     error?: string;
+    trigger?: string;
+    logs?: string[];
   };
 }
 
@@ -94,6 +96,7 @@ export type FrontendRepoState =
   | "queued"
   | "indexing"
   | "failed"
+  | "cancelled"
   | "empty"
   | "access_revoked";
 
@@ -135,6 +138,7 @@ export interface SyncProgressView {
   percentComplete: number;
   currentStep: string;
   steps: string[];
+  logs?: string[];
 }
 
 export interface CitationPreview extends Citation {

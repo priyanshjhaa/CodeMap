@@ -29,6 +29,21 @@ export class SyncQueueService implements OnModuleDestroy {
     return job;
   }
 
+  async cancelSync(syncId: string) {
+    const job = await this.queue.getJob(syncId);
+    if (!job) {
+      return { removed: false, reason: "Sync job is not waiting in Redis." };
+    }
+
+    const state = await job.getState();
+    if (state === "waiting" || state === "delayed" || state === "prioritized") {
+      await job.remove();
+      return { removed: true, reason: `Removed ${state} sync job from Redis.` };
+    }
+
+    return { removed: false, reason: `Sync job is ${state}; worker will stop at the next cancellation checkpoint.` };
+  }
+
   async onModuleDestroy() {
     await this.queue.close();
   }

@@ -25,6 +25,7 @@ import {
   getCurrentWorkspace,
   getRepositoryDetail,
   getSyncProgress,
+  cancelRepositorySync,
   deleteRepository,
   listRepositories,
   listChatSessions,
@@ -52,6 +53,7 @@ interface ProductContextValue {
   setActiveSession: (sessionId: string) => void;
   askQuestion: (message: string) => Promise<void>;
   triggerSync: () => Promise<void>;
+  cancelSync: () => Promise<void>;
   deleteActiveRepository: () => Promise<void>;
   dismissNotification: (id: string) => void;
 }
@@ -290,11 +292,11 @@ export function ProductProvider({ children }: PropsWithChildren) {
         const latestSync = await getSyncProgress(activeRepoId);
         setSyncProgress(latestSync);
 
-        if (latestSync.state === "ready" || latestSync.state === "failed") {
+        if (latestSync.state === "ready" || latestSync.state === "failed" || latestSync.state === "cancelled") {
           await loadRepositoryState(activeRepoId, { showPending: false });
           notify({
-            tone: latestSync.state === "ready" ? "success" : "danger",
-            title: latestSync.state === "ready" ? "Sync complete" : "Sync failed",
+            tone: latestSync.state === "ready" ? "success" : latestSync.state === "cancelled" ? "warning" : "danger",
+            title: latestSync.state === "ready" ? "Sync complete" : latestSync.state === "cancelled" ? "Sync cancelled" : "Sync failed",
             message: latestSync.currentStep
           });
           setPending(false);
@@ -317,6 +319,36 @@ export function ProductProvider({ children }: PropsWithChildren) {
         tone: "danger",
         title: "Sync failed to start",
         message: error instanceof Error ? error.message : "Unable to start repository sync."
+      });
+      setPending(false);
+    }
+  }
+
+  async function cancelSync() {
+    if (!activeRepoId) {
+      return;
+    }
+
+    setPending(true);
+    setRepositoryError(null);
+
+    try {
+      const result = await cancelRepositorySync(activeRepoId);
+      setSyncProgress(result);
+      notify({
+        tone: "warning",
+        title: "Sync cancellation requested",
+        message: result.currentStep
+      });
+      await loadRepositoryState(activeRepoId, { showPending: false });
+      setPending(false);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unable to cancel repository sync.";
+      setRepositoryError(message);
+      notify({
+        tone: "danger",
+        title: "Cancel failed",
+        message
       });
       setPending(false);
     }
@@ -387,6 +419,7 @@ export function ProductProvider({ children }: PropsWithChildren) {
     },
     askQuestion,
     triggerSync,
+    cancelSync,
     deleteActiveRepository,
     dismissNotification
   };

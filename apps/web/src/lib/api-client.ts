@@ -125,6 +125,13 @@ export async function startRepositorySync(repoId: string): Promise<SyncProgressV
   });
 }
 
+export async function cancelRepositorySync(repoId: string): Promise<SyncProgressView> {
+  if (USE_MOCK_DATA) return demoApi.getSyncProgress(repoId);
+  return requestJson(`/api/repos/${repoId}/sync`, {
+    method: "DELETE"
+  });
+}
+
 export async function listChatSessions(repoId: string): Promise<ChatSessionView[]> {
   return USE_MOCK_DATA ? demoApi.listChatSessions(repoId) : requestJson(`/api/repos/${repoId}/chat/sessions`);
 }

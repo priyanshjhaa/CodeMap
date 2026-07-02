@@ -780,6 +780,28 @@ p {
   background: rgba(239, 68, 68, 0.08);
 }
 
+.status-pill--cancelled {
+  color: var(--warning);
+  border-color: rgba(245, 158, 11, 0.3);
+  background: rgba(245, 158, 11, 0.08);
+}
+
+.sync-log {
+  margin-top: 10px;
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.sync-log summary {
+  cursor: pointer;
+  color: var(--accent-light);
+}
+
+.sync-log ul {
+  margin: 8px 0 0;
+  padding-left: 18px;
+}
+
 .loading-card {
   overflow: hidden;
 }
