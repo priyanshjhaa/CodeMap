@@ -9,7 +9,7 @@ export const env = {
   encryptionKey: process.env.ENCRYPTION_KEY ?? "",
   embeddingsProvider: process.env.EMBEDDINGS_PROVIDER ?? "local",
   openAiApiKey: process.env.OPENAI_API_KEY ?? "",
-  chatProvider: process.env.CHAT_PROVIDER ?? "openai",
+  chatProvider: process.env.CHAT_PROVIDER ?? "groq",
   openAiChatModel: process.env.OPENAI_CHAT_MODEL ?? "gpt-5.4-mini",
   groqApiKey: process.env.GROQ_API_KEY ?? "",
   groqChatModel: process.env.GROQ_CHAT_MODEL ?? "openai/gpt-oss-120b",

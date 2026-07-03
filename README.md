@@ -16,6 +16,7 @@ CodeMap is a hosted onboarding assistant for engineering teams. The MVP lets a d
 - Docker Desktop or another Docker-compatible runtime.
 - A GitHub OAuth app for live private/public repo access.
 - Optional Groq/OpenAI keys for live chat providers. Local embeddings are the default for development.
+- Keep `package-lock.json` committed for reproducible Docker and CI installs.
 
 ## Fresh Clone Setup
 
@@ -41,6 +42,7 @@ cp apps/web/.env.example apps/web/.env
 - `GITHUB_WEBHOOK_SECRET`: optional. Set it when configuring GitHub push webhooks for automatic default-branch re-syncs.
 - `EMBEDDINGS_PROVIDER=local`: recommended for local development.
 - `CHAT_PROVIDER=groq` plus `GROQ_API_KEY`, or `CHAT_PROVIDER=openai` plus `OPENAI_API_KEY`.
+- Repository sync, parsing, chunk storage, and architecture snapshots do not require OpenAI. If embedding generation fails because a remote provider is out of quota, sync still stores indexed files/chunks and records an embedding warning.
 
 4. Start local infrastructure.
 
@@ -104,6 +106,10 @@ npm run typecheck        # all workspaces
 npm run build            # all workspaces
 npm run test             # all workspace tests
 ```
+
+## Lockfile Policy
+
+`package-lock.json` should be tracked. It pins the exact dependency versions used by local setup, CI, and Docker builds. Without it, production images may install newer transitive packages than the version tested locally.
 
 If Next.js reports missing chunks or stale build files:
 

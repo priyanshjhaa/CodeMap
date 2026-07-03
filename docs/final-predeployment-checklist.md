@@ -31,6 +31,9 @@
 - Worker process is running separately from API.
 - `REPO_STORAGE_PATH` is writable and cleaned after sync tasks.
 - GitHub webhook secret is configured before enabling webhooks.
+- Runtime uses Node `22.x`.
+- `package-lock.json` is committed and Docker/CI installs from it.
+- API Docker image builds successfully from `apps/api/Dockerfile`.
 
 ## Verification Commands
 
@@ -38,6 +41,7 @@
 npm run typecheck --workspaces
 npm run test --workspaces --if-present
 npm run build --workspaces
+docker build -f apps/api/Dockerfile -t codemap-api:deployment-check .
 npm --workspace @codemap/api run prisma:deploy
 ```
 

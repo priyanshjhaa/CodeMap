@@ -13,4 +13,6 @@ tmp
 **/.env.*.local
 .DS_Store
 .git
+.claude
+.codex
 .codemap-next-roadmap.md

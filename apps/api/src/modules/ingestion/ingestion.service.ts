@@ -338,16 +338,18 @@ export class IngestionService {
 
       await this.updateSync(syncId, "indexing", {
         ...summary,
-        currentStep: "Creating retrieval vectors for indexed chunks.",
+        currentStep: "Preparing optional retrieval vectors for indexed chunks.",
         percentComplete: 85
       });
       await this.assertNotCancelled(syncId);
 
-      const chunkEmbeddings = await this.embedParsedChunks(parsedFiles);
+      const { embeddings: chunkEmbeddings, warning: embeddingWarning } = await this.embedParsedChunks(parsedFiles);
 
       await this.updateSync(syncId, "indexing", {
         ...summary,
-        currentStep: "Persisting indexed files, chunks, and retrieval vectors.",
+        currentStep: embeddingWarning
+          ? "Persisting indexed files and chunks without retrieval vectors."
+          : "Persisting indexed files, chunks, and retrieval vectors.",
         percentComplete: 92
       });
       await this.assertNotCancelled(syncId);
@@ -367,9 +369,15 @@ export class IngestionService {
           completedAt: new Date(),
           summary: toJson({
             ...summary,
+            embeddingWarning,
             currentStep: "Repository is indexed and ready.",
             percentComplete: 100,
-            logs: this.withLog(this.readSummary(syncRecord), "Repository sync completed successfully.").logs
+            logs: this.withLog(
+              this.readSummary(syncRecord),
+              embeddingWarning
+                ? `Repository sync completed, but embeddings were skipped: ${embeddingWarning}`
+                : "Repository sync completed successfully."
+            ).logs
           })
         }
       });
@@ -656,10 +664,21 @@ export class IngestionService {
       }
     }
 
-    const embeddings = await this.embeddingsService.embedTexts(chunkInputs.map((chunk) => chunk.content));
-    return new Map<string, number[]>(
-      chunkInputs.map((chunk, index) => [chunk.key, embeddings[index]])
-    );
+    try {
+      const embeddings = await this.embeddingsService.embedTexts(chunkInputs.map((chunk) => chunk.content));
+      return {
+        embeddings: new Map<string, number[]>(
+          chunkInputs.map((chunk, index) => [chunk.key, embeddings[index]])
+        )
+      };
+    } catch (error) {
+      const warning = error instanceof Error ? error.message : "Embedding generation failed.";
+      this.logger.warn(`Skipping embeddings during sync: ${warning}`);
+      return {
+        embeddings: new Map<string, number[]>(),
+        warning
+      };
+    }
   }
 
   private chunkEmbeddingKey(filePath: string, chunkIndex: number) {

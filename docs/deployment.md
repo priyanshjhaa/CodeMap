@@ -27,6 +27,12 @@ API and worker:
 - `OPENAI_API_KEY` when OpenAI is selected
 - `GROQ_API_KEY` when Groq is selected
 
+Recommended defaults:
+
+- `EMBEDDINGS_PROVIDER=local` unless you intentionally want OpenAI-backed retrieval vectors.
+- `CHAT_PROVIDER=groq` when OpenAI quota/billing is unavailable.
+- Repository sync and deterministic architecture generation should complete without OpenAI. Remote embedding failures are recorded as sync warnings instead of blocking file/chunk persistence.
+
 Web:
 
 - `GITHUB_CLIENT_ID`
@@ -43,17 +49,19 @@ Web:
 1. Run `npm run typecheck --workspaces`.
 2. Run `npm run test --workspaces --if-present`.
 3. Run `npm run build --workspaces`.
-4. Apply migrations with `npm --workspace @codemap/api run prisma:deploy`.
-5. Deploy API container and verify `GET /api/health`.
-6. Deploy worker container and verify it connects to Redis queue `SYNC_QUEUE_NAME`.
-7. Deploy web on Vercel and verify GitHub OAuth callback.
-8. Configure GitHub webhook URL: `https://<api-host>/api/github/webhooks`.
-9. Smoke test repository connect, sync, chat citation, architecture, sync cancel, and repository deletion.
+4. Build the API image with `docker build -f apps/api/Dockerfile -t codemap-api:<version> .`.
+5. Apply migrations with `npm --workspace @codemap/api run prisma:deploy`.
+6. Deploy API container and verify `GET /api/health`.
+7. Deploy worker container and verify it connects to Redis queue `SYNC_QUEUE_NAME`.
+8. Deploy web on Vercel and verify GitHub OAuth callback.
+9. Configure GitHub webhook URL: `https://<api-host>/api/github/webhooks`.
+10. Smoke test repository connect, sync, chat citation, architecture, sync cancel, and repository deletion.
 
 ## Operational Notes
 
 - Use separate API and worker processes. Do not run sync work inside the web process.
 - Keep API and worker on the same image version.
+- Use Node `22.x` everywhere and install dependencies from the committed `package-lock.json`.
 - Rotate `API_INTERNAL_SECRET`, `NEXTAUTH_SECRET`, and `ENCRYPTION_KEY` through the platform secret manager.
 - Do not log source code, retrieved excerpts, GitHub tokens, OpenAI/Groq keys, or raw prompt context.
 - Monitor API 5xx rate, queue failures, sync duration, GitHub 403/429, and provider quota errors.
