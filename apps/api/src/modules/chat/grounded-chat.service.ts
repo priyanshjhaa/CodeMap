@@ -18,6 +18,38 @@ type ChatMessage = {
 };
 
 const MAX_CONTEXT_CHUNKS = 6;
+const GROQ_GROUNDED_ANSWER_SCHEMA = {
+  name: "codemap_grounded_answer",
+  strict: true,
+  schema: {
+    type: "object",
+    additionalProperties: false,
+    properties: {
+      answer: { type: "string" },
+      confidence: { type: "string", enum: ["low", "medium", "high"] },
+      citations: {
+        type: "array",
+        items: {
+          type: "object",
+          additionalProperties: false,
+          properties: {
+            filePath: { type: "string" },
+            symbol: { type: ["string", "null"] },
+            lineStart: { type: ["number", "null"] },
+            lineEnd: { type: ["number", "null"] },
+            reason: { type: "string" }
+          },
+          required: ["filePath", "symbol", "lineStart", "lineEnd", "reason"]
+        }
+      },
+      followUps: {
+        type: "array",
+        items: { type: "string" }
+      }
+    },
+    required: ["answer", "confidence", "citations", "followUps"]
+  }
+} as const;
 
 @Injectable()
 export class GroundedChatService {
@@ -167,7 +199,10 @@ export class GroundedChatService {
         },
         body: JSON.stringify({
           model: env.groqChatModel,
-          response_format: { type: "json_object" },
+          response_format: {
+            type: "json_schema",
+            json_schema: GROQ_GROUNDED_ANSWER_SCHEMA
+          },
           messages
         })
       }),
@@ -176,10 +211,12 @@ export class GroundedChatService {
     );
 
     if (!response.ok) {
+      const body = await response.text().catch(() => "");
       const hint = response.status === 429
         ? " Groq quota or rate limit was reached; wait and retry or switch providers."
         : "";
-      throw new ServiceUnavailableException(`Groq chat completion failed with status ${response.status}.${hint}`);
+      const detail = body ? ` Response: ${body.slice(0, 500)}` : "";
+      throw new ServiceUnavailableException(`Groq chat completion failed with status ${response.status}.${hint}${detail}`);
     }
 
     const payload = await response.json() as {
