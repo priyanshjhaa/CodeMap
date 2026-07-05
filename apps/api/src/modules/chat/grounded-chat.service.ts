@@ -76,6 +76,23 @@ export class GroundedChatService {
       };
     }
 
+    if (input.lowConfidence && input.intent === "location_lookup") {
+      const boundedChunks = input.retrievedChunks.slice(0, MAX_CONTEXT_CHUNKS);
+      return {
+        answer: this.fallbackAnswer(input.question, true, boundedChunks),
+        confidence: "low",
+        intent: input.intent,
+        citations: boundedChunks.slice(0, 3).map((chunk) => ({
+          filePath: chunk.filePath,
+          symbol: chunk.symbol,
+          lineStart: chunk.lineStart,
+          lineEnd: chunk.lineEnd,
+          reason: chunk.reason
+        })),
+        followUps: this.followUps(undefined, true)
+      };
+    }
+
     const messages = this.buildMessages(input);
     const boundedChunks = input.retrievedChunks.slice(0, MAX_CONTEXT_CHUNKS);
     const raw = env.chatProvider === "groq"
@@ -139,7 +156,9 @@ export class GroundedChatService {
         content: [
           "You are CodeMap, a careful codebase onboarding assistant.",
           "Answer only from the provided repository context.",
-          "If context is weak, say what is uncertain and do not invent files or behavior.",
+          "If context is weak, say what is uncertain and do not invent files, modules, behavior, framework conventions, or typical patterns.",
+          "Never say where something is likely located unless a supplied citation directly supports that location.",
+          "If exact implementation details are not present in the excerpts, say that and list only the closest cited files as starting points.",
           "Prefer direct file and symbol locations when the user asks where functionality lives.",
           "Return JSON with keys: answer, confidence, citations, followUps.",
           "Citations must use only provided filePath, symbol, lineStart, lineEnd values."
@@ -240,7 +259,7 @@ export class GroundedChatService {
       .join(", ");
 
     if (lowConfidence) {
-      return `I found only weak repository matches for "${question}". The closest indexed areas are ${locations || "not available"}, so treat this as a starting point rather than a definitive answer.`;
+      return `I do not have a strong enough indexed match to answer "${question}" precisely. The closest retrieved areas are ${locations || "not available"}, so treat these only as starting points, not confirmed implementation locations.`;
     }
 
     return `The strongest indexed matches for "${question}" are ${locations || "not available"}. Review the cited files for the exact implementation details.`;

@@ -5,7 +5,7 @@ import { EmbeddingsService } from "../embeddings/embeddings.service.js";
 
 const TOP_K = 8;
 const CANDIDATE_LIMIT = 24;
-const LOW_CONFIDENCE_DISTANCE = 0.42;
+const LOW_CONFIDENCE_SCORE = 0.34;
 const MAX_EXCERPT_CHARS = 1_000;
 const MAX_QUERY_TERMS = 12;
 
@@ -27,6 +27,7 @@ type RetrievedChunkRow = {
   filePath: string | null;
   distance: number;
   lexicalRank?: number;
+  rankScore?: number;
 };
 
 export type RetrievedChunk = {
@@ -94,7 +95,7 @@ export class RetrievalService {
     return {
       intent,
       chunks,
-      lowConfidence: !chunks.length || (vectorRows[0]?.distance ?? 1) > LOW_CONFIDENCE_DISTANCE
+      lowConfidence: !chunks.length || (chunks[0]?.score ?? 0) < LOW_CONFIDENCE_SCORE
     };
   }
 
@@ -154,11 +155,9 @@ export class RetrievalService {
       });
     }
 
-    return Array.from(merged.values()).sort((left, right) => {
-      const rightScore = this.combinedScore(right, question);
-      const leftScore = this.combinedScore(left, question);
-      return rightScore - leftScore;
-    });
+    return Array.from(merged.values())
+      .map((row) => ({ ...row, rankScore: this.combinedScore(row, question) }))
+      .sort((left, right) => (right.rankScore ?? 0) - (left.rankScore ?? 0));
   }
 
   private combinedScore(row: RetrievedChunkRow, question: string) {
@@ -181,7 +180,7 @@ export class RetrievalService {
     const symbol = typeof metadata.symbol === "string" ? metadata.symbol : undefined;
     const lineStart = typeof metadata.lineStart === "number" ? metadata.lineStart : undefined;
     const lineEnd = typeof metadata.lineEnd === "number" ? metadata.lineEnd : undefined;
-    const score = Math.max(0, 1 - Number(row.distance));
+    const score = row.rankScore ?? Math.max(0, 1 - Number(row.distance));
 
     return {
       id: row.id,
