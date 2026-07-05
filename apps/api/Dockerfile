@@ -30,4 +30,4 @@ COPY --from=build /app/apps/api/prisma apps/api/prisma
 COPY --from=build /app/apps/api/node_modules/.prisma apps/api/node_modules/.prisma
 COPY --from=build /app/apps/api/node_modules/@prisma apps/api/node_modules/@prisma
 EXPOSE 4000
-CMD ["node", "apps/api/dist/main.js"]
+CMD ["sh", "-c", "npm --workspace @codemap/api run prisma:deploy && node apps/api/dist/main.js"]

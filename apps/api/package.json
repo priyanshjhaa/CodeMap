@@ -29,6 +29,7 @@
     "class-validator": "^0.14.2",
     "ioredis": "^5.11.1",
     "openai": "^6.45.0",
+    "prisma": "^5.22.0",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.2",
     "tar": "^7.5.17",
@@ -38,7 +39,6 @@
     "@nestjs/cli": "^11.0.10",
     "@nestjs/schematics": "^11.0.6",
     "@types/express": "^5.0.6",
-    "prisma": "^5.22.0",
     "vitest": "^4.0.15"
   }
 }
