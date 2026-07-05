@@ -54,6 +54,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
               image: user.image
             },
             account: {
+              provider_account_id: account.providerAccountId,
               access_token: account.access_token,
               refresh_token: account.refresh_token,
               expires_at: account.expires_at

@@ -6,11 +6,12 @@ import { AuditService } from "../audit/audit.service.js";
 
 interface GithubCallbackDto {
   user: {
-    email: string;
-    name: string;
-    image: string;
+    email?: string | null;
+    name?: string | null;
+    image?: string | null;
   };
   account: {
+    provider_account_id?: string;
     access_token: string;
     refresh_token?: string;
     expires_at?: number;
@@ -28,18 +29,25 @@ export class AuthService {
 
   async handleGithubCallback(dto: GithubCallbackDto) {
     const { user, account } = dto;
+    const githubAccountId = account.provider_account_id?.trim();
+    const email = user.email?.trim() || (githubAccountId ? `github-${githubAccountId}@users.codemap.local` : null);
+    const displayName = user.name?.trim() || (githubAccountId ? `GitHub User ${githubAccountId}` : "GitHub User");
+
+    if (!email) {
+      throw new Error("GitHub account did not include an email or provider account id.");
+    }
 
     // Create or update user
     const dbUser = await this.prisma.user.upsert({
-      where: { email: user.email },
+      where: { email },
       update: {
-        name: user.name,
-        avatarUrl: user.image
+        name: displayName,
+        avatarUrl: user.image ?? null
       },
       create: {
-        email: user.email,
-        name: user.name,
-        avatarUrl: user.image
+        email,
+        name: displayName,
+        avatarUrl: user.image ?? null
       }
     });
 
@@ -56,10 +64,15 @@ export class AuthService {
     });
 
     if (!workspace) {
+      const workspaceSlugBase = displayName
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-+|-+$/g, "") || "user";
+
       workspace = await this.prisma.workspace.create({
         data: {
-          name: `${dbUser.name}'s Workspace`,
-          slug: `${dbUser.name?.toLowerCase().replace(/\s+/g, '-') || 'user'}-${Date.now()}`,
+          name: `${displayName}'s Workspace`,
+          slug: `${workspaceSlugBase}-${Date.now()}`,
           memberships: {
             create: {
               userId: dbUser.id,
