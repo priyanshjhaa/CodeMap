@@ -3,6 +3,13 @@
 import { useState } from "react";
 import { useProduct } from "./product-provider";
 
+const STARTER_PROMPTS = [
+  "Where should I start reading this repository?",
+  "What are the main request flows?",
+  "Which files define the data layer?",
+  "Where is GitHub integration handled?"
+];
+
 export function ChatWorkspace() {
   const {
     sessions,
@@ -29,9 +36,27 @@ export function ChatWorkspace() {
   }
 
   return (
-    <div className="chat-layout">
-      <aside className="card chat-sidebar">
-        <p className="eyebrow">Conversation threads</p>
+    <div className="chat-product">
+      <section className="chat-command-center">
+        <div>
+          <p className="eyebrow">Repository intelligence</p>
+          <h2>Ask precise questions. Get cited answers.</h2>
+          <p>
+            CodeMap searches the indexed repository, retrieves the closest files and symbols, then
+            keeps the response grounded with source citations.
+          </p>
+        </div>
+        <div className="chat-command-center__status">
+          <span className={`status-pill status-pill--${activeRepository?.syncStatus ?? "indexing"}`}>
+            {activeRepository?.syncStatus ?? "loading"}
+          </span>
+          <strong>{activeRepository ? `${activeRepository.owner}/${activeRepository.name}` : "No repository selected"}</strong>
+        </div>
+      </section>
+
+      <div className="chat-layout chat-layout--pro">
+        <aside className="chat-sidebar">
+        <p className="eyebrow">Threads</p>
         <h2>{activeRepository?.name ?? "Repository chat"}</h2>
         <div className="thread-list">
           {sessions.length ? (
@@ -48,24 +73,35 @@ export function ChatWorkspace() {
             ))
           ) : (
             <p className="empty-note">
-              No conversation threads yet. Your first message will create one.
+              No threads yet. Ask your first repository question to start a focused conversation.
             </p>
           )}
         </div>
       </aside>
 
-      <section className="card chat-main">
-        <div className="panel-heading">
+      <section className="chat-main">
+        <div className="chat-main__topbar">
           <div>
             <p className="eyebrow">Repository chat</p>
             <h2>{activeSession?.title ?? "New conversation"}</h2>
           </div>
-          <span className={`status-pill status-pill--${activeRepository?.syncStatus ?? "indexing"}`}>
-            {activeRepository?.syncStatus ?? "loading"}
-          </span>
+          <span>{activeSession?.messages.length ?? 0} messages</span>
         </div>
 
-        <div className="message-list">
+        <div className="starter-list starter-list--chat">
+          {STARTER_PROMPTS.map((prompt) => (
+            <button
+              key={prompt}
+              className="starter-chip"
+              type="button"
+              onClick={() => setDraft(prompt)}
+            >
+              {prompt}
+            </button>
+          ))}
+        </div>
+
+        <div className="message-list chat-scrollport">
           {!repositoryReady ? (
             <article className="message-bubble message-bubble--assistant">
               <span className="message-role">CodeMap</span>
@@ -106,10 +142,10 @@ export function ChatWorkspace() {
           ) : null}
         </div>
 
-        <form className="chat-form" onSubmit={onSubmit}>
+        <form className="chat-form chat-composer" onSubmit={onSubmit}>
           <textarea
             aria-label="Ask a repository question"
-            rows={4}
+            rows={3}
             value={draft}
             onChange={(event) => setDraft(event.target.value)}
             placeholder="Ask about architecture, flows, modules, or where functionality lives."
@@ -120,9 +156,9 @@ export function ChatWorkspace() {
         </form>
       </section>
 
-      <aside className="card citation-rail">
-        <p className="eyebrow">Citation previews</p>
-        <h2>Why this answer is grounded</h2>
+      <aside className="citation-rail">
+        <p className="eyebrow">Grounding</p>
+        <h2>Citations</h2>
         <div className="citation-list">
           {selectedCitations.length ? (
             selectedCitations.map((citation) => (
@@ -138,11 +174,12 @@ export function ChatWorkspace() {
             ))
           ) : (
             <p className="empty-note">
-              Citation previews will appear here after a repository answer includes source context.
+              Source previews appear after CodeMap retrieves repository context for an answer.
             </p>
           )}
         </div>
       </aside>
+      </div>
     </div>
   );
 }
