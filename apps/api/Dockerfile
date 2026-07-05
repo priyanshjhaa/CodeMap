@@ -1,6 +1,9 @@
 FROM node:22-bookworm-slim AS base
 WORKDIR /app
 ENV NODE_ENV=production
+RUN apt-get update -y \
+  && apt-get install -y --no-install-recommends openssl ca-certificates \
+  && rm -rf /var/lib/apt/lists/*
 
 FROM base AS deps
 COPY package.json package-lock.json* ./
@@ -24,7 +27,7 @@ COPY packages/ui/package.json packages/ui/package.json
 RUN npm ci --omit=dev
 COPY --from=build /app/apps/api/dist apps/api/dist
 COPY --from=build /app/apps/api/prisma apps/api/prisma
-COPY --from=build /app/node_modules/.prisma node_modules/.prisma
-COPY --from=build /app/node_modules/@prisma node_modules/@prisma
+COPY --from=build /app/apps/api/node_modules/.prisma apps/api/node_modules/.prisma
+COPY --from=build /app/apps/api/node_modules/@prisma apps/api/node_modules/@prisma
 EXPOSE 4000
 CMD ["node", "apps/api/dist/main.js"]
