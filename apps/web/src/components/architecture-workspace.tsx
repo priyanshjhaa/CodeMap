@@ -65,7 +65,7 @@ export function ArchitectureWorkspace() {
           <div className="architecture-read-stack">
             {architecture?.recommendedReads.length ? (
               architecture.recommendedReads.slice(0, 6).map((item, index) => (
-                <div key={item} className="architecture-read">
+                <div key={item} className="architecture-read" title={item}>
                   <span>{String(index + 1).padStart(2, "0")}</span>
                   <strong>{item}</strong>
                 </div>
@@ -82,7 +82,7 @@ export function ArchitectureWorkspace() {
             <h3>Where execution starts</h3>
           </div>
           <ul className="architecture-list">
-            {architecture?.entryPoints.length ? architecture.entryPoints.map((item) => <li key={item}>{item}</li>) : <li>No entry points available yet.</li>}
+            {architecture?.entryPoints.length ? architecture.entryPoints.map((item) => <li key={item} title={item}>{item}</li>) : <li>No entry points available yet.</li>}
           </ul>
         </article>
 
@@ -92,7 +92,7 @@ export function ArchitectureWorkspace() {
             <h3>Likely paths through the app</h3>
           </div>
           <ul className="architecture-list">
-            {architecture?.majorFlows.length ? architecture.majorFlows.map((item) => <li key={item}>{item}</li>) : <li>Major flow analysis is not available yet.</li>}
+            {architecture?.majorFlows.length ? architecture.majorFlows.map((item) => <li key={item} title={item}>{item}</li>) : <li>Major flow analysis is not available yet.</li>}
           </ul>
         </article>
       </section>
@@ -106,7 +106,7 @@ export function ArchitectureWorkspace() {
               <p>{section.body}</p>
               <ul className="architecture-list">
                 {section.bullets.map((item) => (
-                  <li key={item}>{item}</li>
+                  <li key={item} title={item}>{item}</li>
                 ))}
               </ul>
             </article>

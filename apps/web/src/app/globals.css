@@ -1499,13 +1499,15 @@ html {
 
 .architecture-board {
   display: grid;
-  grid-template-columns: minmax(280px, 0.9fr) repeat(2, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 0.9fr) repeat(2, minmax(0, 1fr));
   gap: 16px;
 }
 
 .architecture-card,
 .architecture-diagram-panel {
   padding: 20px;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .architecture-card__heading {
@@ -1514,12 +1516,15 @@ html {
   gap: 16px;
   align-items: flex-start;
   margin-bottom: 16px;
+  min-width: 0;
 }
 
 .architecture-card h3,
 .architecture-diagram-panel h3 {
   font-size: 1.15rem;
   line-height: 1.18;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .architecture-read-stack,
@@ -1537,6 +1542,7 @@ html {
   border-radius: 16px;
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.07);
+  min-width: 0;
 }
 
 .architecture-read span {
@@ -1557,6 +1563,7 @@ html {
   list-style: none;
   display: grid;
   gap: 10px;
+  min-width: 0;
 }
 
 .architecture-list li {
@@ -1564,6 +1571,9 @@ html {
   padding-left: 18px;
   color: rgba(229, 231, 235, 0.82);
   line-height: 1.5;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .architecture-list li::before {
