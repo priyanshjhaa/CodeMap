@@ -18,6 +18,17 @@ type ChatMessage = {
 };
 
 const MAX_CONTEXT_CHUNKS = 6;
+const VAGUE_ANSWER_PATTERNS = [
+  /\blikely\b/i,
+  /\btypically\b/i,
+  /\bgenerally\b/i,
+  /\busually\b/i,
+  /\bprobably\b/i,
+  /\bmight be\b/i,
+  /\bmay be\b/i,
+  /\bcommon pattern\b/i,
+  /\bnot shown in the excerpt\b/i
+];
 const GROQ_GROUNDED_ANSWER_SCHEMA = {
   name: "codemap_grounded_answer",
   strict: true,
@@ -25,7 +36,10 @@ const GROQ_GROUNDED_ANSWER_SCHEMA = {
     type: "object",
     additionalProperties: false,
     properties: {
-      answer: { type: "string" },
+      answer: {
+        type: "string",
+        description: "A concise, repository-specific answer grounded only in the supplied excerpts. No generic framework advice."
+      },
       confidence: { type: "string", enum: ["low", "medium", "high"] },
       citations: {
         type: "array",
@@ -37,7 +51,10 @@ const GROQ_GROUNDED_ANSWER_SCHEMA = {
             symbol: { type: ["string", "null"] },
             lineStart: { type: ["number", "null"] },
             lineEnd: { type: ["number", "null"] },
-            reason: { type: "string" }
+            reason: {
+              type: "string",
+              description: "A short explanation of the exact evidence this citation provides."
+            }
           },
           required: ["filePath", "symbol", "lineStart", "lineEnd", "reason"]
         }
@@ -122,11 +139,17 @@ export class GroundedChatService {
         lineEnd: chunk.lineEnd,
         reason: chunk.reason
       }));
+    const answerNeedsFallback =
+      !parsed.answer ||
+      !fallbackCitations.length ||
+      this.isVagueAnswer(parsed.answer);
+    const deterministicFallback = this.fallbackAnswer(input.question, input.lowConfidence, boundedChunks);
+    const answerText = answerNeedsFallback
+      ? deterministicFallback
+      : parsed.answer ?? deterministicFallback;
 
     return {
-      answer:
-        parsed.answer ??
-        this.fallbackAnswer(input.question, input.lowConfidence, boundedChunks),
+      answer: answerText,
       confidence: input.lowConfidence ? "low" : parsed.confidence ?? "medium",
       intent: input.intent,
       citations: fallbackCitations,
@@ -154,14 +177,17 @@ export class GroundedChatService {
       {
         role: "system",
         content: [
-          "You are CodeMap, a careful codebase onboarding assistant.",
-          "Answer only from the provided repository context.",
-          "If context is weak, say what is uncertain and do not invent files, modules, behavior, framework conventions, or typical patterns.",
-          "Never say where something is likely located unless a supplied citation directly supports that location.",
-          "If exact implementation details are not present in the excerpts, say that and list only the closest cited files as starting points.",
-          "Prefer direct file and symbol locations when the user asks where functionality lives.",
-          "Return JSON with keys: answer, confidence, citations, followUps.",
-          "Citations must use only provided filePath, symbol, lineStart, lineEnd values."
+          "You are CodeMap, a strict codebase navigation assistant for engineers.",
+          "Your job is to answer with precise repository facts, not generic software-engineering advice.",
+          "Use ONLY the supplied context array. Every factual claim about code location, behavior, dependency, or flow must be supported by a citation from that context.",
+          "Do not infer from framework conventions. Do not use words like likely, probably, typically, generally, usually, may be, or might be.",
+          "If the context does not prove the answer, say exactly: I do not have enough indexed context to answer that precisely.",
+          "For location questions, start with the exact file path and symbol when present, then explain why that citation is relevant.",
+          "For flow questions, describe only steps visible in the excerpts. If a step is missing, name the gap instead of filling it in.",
+          "Keep the answer concise: 2-5 short bullets or one short paragraph. Prefer file paths over broad module names.",
+          "Return valid JSON with keys: answer, confidence, citations, followUps.",
+          "Citations must use only provided filePath, symbol, lineStart, lineEnd values.",
+          "Citation reasons must be specific evidence, not generic phrases like relevant context."
         ].join(" ")
       },
       {
@@ -170,6 +196,11 @@ export class GroundedChatService {
           question: input.question,
           intent: input.intent,
           lowConfidence: input.lowConfidence,
+          responseRules: {
+            format: "Precise, cited, repository-specific.",
+            avoid: ["generic explanations", "framework assumptions", "uncited location guesses"],
+            requireCitationForEveryClaim: true
+          },
           context
         })
       }
@@ -255,14 +286,18 @@ export class GroundedChatService {
   private fallbackAnswer(question: string, lowConfidence: boolean, chunks: RetrievedChunk[]) {
     const locations = chunks
       .slice(0, 3)
-      .map((chunk) => `${chunk.filePath}${chunk.symbol ? ` (${chunk.symbol})` : ""}`)
-      .join(", ");
+      .map((chunk, index) => `${index + 1}. ${chunk.filePath}${chunk.symbol ? ` (${chunk.symbol})` : ""}${chunk.lineStart ? ` L${chunk.lineStart}-${chunk.lineEnd}` : ""}`)
+      .join("\n");
 
     if (lowConfidence) {
-      return `I do not have a strong enough indexed match to answer "${question}" precisely. The closest retrieved areas are ${locations || "not available"}, so treat these only as starting points, not confirmed implementation locations.`;
+      return `I do not have enough indexed context to answer "${question}" precisely.\n\nClosest retrieved starting points:\n${locations || "No close indexed files were retrieved."}`;
     }
 
-    return `The strongest indexed matches for "${question}" are ${locations || "not available"}. Review the cited files for the exact implementation details.`;
+    return `Strongest indexed matches for "${question}":\n${locations || "No close indexed files were retrieved."}\n\nUse the citations to verify the exact implementation details.`;
+  }
+
+  private isVagueAnswer(answer: string) {
+    return VAGUE_ANSWER_PATTERNS.some((pattern) => pattern.test(answer));
   }
 
   private followUps(modelFollowUps: string[] | undefined, lowConfidence: boolean) {
