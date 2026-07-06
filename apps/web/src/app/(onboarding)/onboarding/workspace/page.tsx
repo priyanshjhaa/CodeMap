@@ -35,7 +35,7 @@ const steps: {
 
 export default function WorkspaceOnboardingPage() {
   const router = useRouter();
-  const [workspaceName, setWorkspaceName] = useState("Acme Engineering");
+  const [workspaceName, setWorkspaceName] = useState("");
   const [teamSize, setTeamSize] = useState("11-50");
   const [goal, setGoal] = useState("onboarding");
   const [pending, setPending] = useState(false);
@@ -86,7 +86,7 @@ export default function WorkspaceOnboardingPage() {
             <input
               type="text"
               id="workspace-name"
-              placeholder="e.g., Acme Engineering"
+              placeholder="e.g., CodeMap Team"
               value={workspaceName}
               className="form-input"
               onChange={(event) => setWorkspaceName(event.target.value)}
